@@ -443,7 +443,7 @@ $("#wAdd").onclick=async()=>{const w=+$("#wIn").value,bf=+$("#bfIn").value;if(!w
 
 /* ---------- settings ---------- */
 function readForm(){profile.age=+$("#age").value||25;profile.height=+$("#height").value||175;profile.weight=+$("#weight").value||70;
-  profile.bf=+$("#bf").value||20;profile.bfGoal=+$("#bfGoal").value||15;profile.weeks=+$("#weeks").value||12;profile.act=+$("#act").value;const nk=$("#apiKey").value.trim();if(nk!==profile.apiKey)profile.geminiModel="";profile.apiKey=nk}
+  profile.bf=+$("#bf").value||20;profile.bfGoal=+$("#bfGoal").value||15;profile.weeks=+$("#weeks").value||12;profile.act=+$("#act").value;const nk=$("#apiKey").value.trim();if(nk!==profile.apiKey){profile.geminiModel="";profile.geminiModels=null}profile.apiKey=nk}
 const PROV_HINT={gemini:"免费。打开 aistudio.google.com，用 Google 账号登录 → Get API key → Create API key，复制到这里。不需要绑卡。",
   claude:"按量付费，约几分钱一张照片。打开 console.anthropic.com → API Keys → Create Key，并在 Billing 里充值少量额度。"};
 function fillForm(){$("#apiKey").value=profile.apiKey||"";
@@ -494,29 +494,31 @@ async function fetchRetry(url,opt,tries=3){
       return {json:async()=>({error:{message:m||"请求被拒绝"}})}}
     if(res.status===429||res.status>=500){
       let m="",delay=0;try{const j=await res.clone().json();m=j.error?.message||"";const d=JSON.stringify(j.error?.details||"");const r=d.match(/retryDelay[^\d]*(\d+)/)||m.match(/retry in ([\d.]+)s/i);if(r)delay=Math.ceil(+r[1])}catch(e){}
-      if(res.status===429){rateLimitedUntil=Date.now()+10*60*1000;const daily=/per day|daily|PerDay|quota exceeded for quota metric.*day/i.test(m);
+      if(res.status===429){const daily=/per day|daily|PerDay|quota exceeded for quota metric.*day/i.test(m);
         const err=new ApiError("busy",daily?"今日免费额度已用完":"请求太频繁");err.retryAfter=delay||(daily?0:20);err.daily=daily;throw err}
       if(a<tries-1){await sleep(1200*(a+1));continue}throw new ApiError("busy","识别服务繁忙")}
     return res}
   return res}
-/* pick the newest Flash model this key can use; cached in profile.geminiModel */
-const GEMINI_FALLBACK=["gemini-3.6-flash","gemini-3.5-flash","gemini-3-flash","gemini-2.5-flash"];
-async function geminiModel(refresh){
-  if(profile.geminiModel&&!refresh)return profile.geminiModel;
+/* Ordered list of Flash models this key can use (quotas are per model, so we can hop between them). */
+const GEMINI_FALLBACK=["gemini-3.6-flash","gemini-3.6-flash-lite","gemini-3.5-flash","gemini-3-flash","gemini-3.1-flash-lite","gemini-2.5-flash","gemini-2.5-flash-lite"];
+const cooldown={};   // model -> timestamp until which it is rate-limited
+async function geminiModels(refresh){
+  if(profile.geminiModels&&profile.geminiModels.length&&!refresh)return profile.geminiModels;
   try{
     const r=await fetch("https://generativelanguage.googleapis.com/v1beta/models?pageSize=200&key="+encodeURIComponent(profile.apiKey));
     if(r.status===400||r.status===403)throw new ApiError("nokey","API 密钥无效或已过期");
     const j=await r.json();
     const ver=n=>{const m=n.match(/gemini-(\d+(?:\.\d+)?)/);return m?parseFloat(m[1]):0};
-    const cands=(j.models||[]).map(m=>m.name.replace(/^models\//,""))
-      .filter(n=>/^gemini-[\d.]+-flash$/.test(n)&&!/lite|preview|exp|image|tts|live|audio|thinking/.test(n))
-      .sort((a,b)=>ver(b)-ver(a));
-    const pick=cands[0]||(j.models||[]).map(m=>m.name.replace(/^models\//,"")).filter(n=>/flash/.test(n)&&!/lite|image|tts|live|audio/.test(n)).sort((a,b)=>ver(b)-ver(a))[0];
-    if(pick){profile.geminiModel=pick;store.set("higher:profile",profile);return pick}
+    const names=(j.models||[]).filter(m=>(m.supportedGenerationMethods||["generateContent"]).includes("generateContent")).map(m=>m.name.replace(/^models\//,""));
+    const ok=n=>/^gemini-[\d.]+-flash(-lite)?$/.test(n);
+    const flash=names.filter(n=>ok(n)&&!/lite/.test(n)).sort((a,b)=>ver(b)-ver(a));
+    const lite=names.filter(n=>ok(n)&&/lite/.test(n)).sort((a,b)=>ver(b)-ver(a));
+    const list=[...new Set([flash[0],lite[0],...flash.slice(1),...lite.slice(1)].filter(Boolean))]; // newest flash, newest lite, then the rest
+    if(list.length){profile.geminiModels=list;profile.geminiModel=list[0];store.set("higher:profile",profile);return list}
   }catch(e){if(e.kind==="nokey")throw e}
-  const i=GEMINI_FALLBACK.indexOf(profile.geminiModel);profile.geminiModel=GEMINI_FALLBACK[(i+1)%GEMINI_FALLBACK.length];return profile.geminiModel;
+  profile.geminiModels=GEMINI_FALLBACK;return GEMINI_FALLBACK;
 }
-/* returns model text. image = {type,data} or null */
+const pickModel=(list,skip)=>list.find(m=>!skip.has(m)&&(!cooldown[m]||cooldown[m]<Date.now()))||null;
 const THINK_BUDGET=512; // enough to check portions & per-100g values, not enough to dither
 async function askAI(system,text,image,opts={}){
   const prov=profile.provider||"gemini";
@@ -527,18 +529,23 @@ async function askAI(system,text,image,opts={}){
       if(image)g.responseMimeType="application/json";
       if(fast)g.thinkingConfig={thinkingBudget:image?THINK_BUDGET:0};
       return JSON.stringify({system_instruction:{parts:[{text:system}]},contents:[{parts}],generationConfig:g})};
-    let fast=profile.geminiFast!==false;
-    for(let round=0;round<3;round++){
-      const model=await geminiModel(round>0&&!profile.geminiModel);
-      const res=await fetchRetry(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${encodeURIComponent(profile.apiKey)}`,
-        {method:"POST",headers:{"Content-Type":"application/json"},body:mk(fast)},opts.tries||3);
+    let fast=profile.geminiFast!==false, list=await geminiModels(false); const skip=new Set(); let lastBusy=null;
+    for(let round=0;round<6;round++){
+      let model=pickModel(list,skip);
+      if(!model){if(lastBusy)throw lastBusy;list=await geminiModels(true);model=pickModel(list,skip);if(!model)throw new ApiError("busy","识别服务繁忙")}
+      let res;
+      try{res=await fetchRetry(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${encodeURIComponent(profile.apiKey)}`,
+        {method:"POST",headers:{"Content-Type":"application/json"},body:mk(fast)},opts.tries||3)}
+      catch(e){if(e.kind==="busy"){cooldown[model]=Date.now()+(e.daily?3600:(e.retryAfter||60))*1000;lastBusy=e;skip.add(model);continue}throw e}
       const j=await res.json();
       if(j.error){const m=j.error.message||"";
         if(fast&&/thinking|budget|generationConfig|Unknown name|Invalid JSON payload/i.test(m)){fast=false;profile.geminiFast=false;store.set("higher:profile",profile);continue}
-        if(/not available|not found|no longer|deprecated|not supported/i.test(m)){profile.geminiModel="";continue}
+        if(/not available|not found|no longer|deprecated|not supported/i.test(m)){skip.add(model);profile.geminiModels=list.filter(x=>x!==model);store.set("higher:profile",profile);continue}
         throw new ApiError("server",m||"服务返回错误")}
+      profile.geminiModel=model;
       return (j.candidates?.[0]?.content?.parts||[]).map(p=>p.text||"").join("");
     }
+    throw lastBusy||new ApiError("busy","识别服务繁忙");
   }
   const headers={"Content-Type":"application/json"};
   if(profile.apiKey){headers["x-api-key"]=profile.apiKey;headers["anthropic-version"]="2023-06-01";headers["anthropic-dangerous-direct-browser-access"]="true"}
@@ -585,7 +592,7 @@ async function recognize(img){
   const first=await Promise.allSettled(lowQuota()?[ask()]:[ask(),ask()]);
   let runs=first.filter(r=>r.status==="fulfilled").map(r=>r.value);
   if(!runs.length){const err=first[0].reason;if(err&&(err.kind==="nokey"||err.kind==="network"))throw err;
-    if(err&&err.kind==="busy"){if(err.daily||!err.retryAfter||err.retryAfter>45)throw err;
+    if(err&&err.kind==="busy"){rateLimitedUntil=Date.now()+10*60*1000;if(err.daily||!err.retryAfter||err.retryAfter>45)throw err;
       for(let t=err.retryAfter;t>0;t--){$("#resSub").textContent=`${MEALS[mealNow()]} · 免费额度限速，${t} 秒后自动重试`;await sleep(1000)}}
     runs=[await ask(1)]} // one careful retry
   const spread=(a,b)=>Math.abs(a-b)/Math.max(1,(a+b)/2);
@@ -649,7 +656,7 @@ $("#file").onchange=async e=>{
     pending={meal:mealNow(),items,label:res.label,img:thumb,range:res.range,runs:res.runs,verified,changed};showResult();
   }catch(err){
     const k=err.kind||"server";let [t,p]=FAIL_TEXT[k];if(k==="nokey"){t=err.message;if(profile.apiKey)p="请检查设置里的密钥是否完整、是否与所选服务匹配（Gemini / Claude）。"}
-    if(k==="busy"){t=err.message||t;p=err.daily?"Gemini 免费额度每天重置（太平洋时间 0 点）。可以在设置里切换到 Claude，或明天再用。":`Gemini 免费档限制每分钟请求数。约 ${err.retryAfter||30} 秒后再拍即可；接下来 10 分钟会自动改用单次识别以节省额度。`}
+    if(k==="busy"){t=err.message||t;p=err.daily?"Gemini 免费额度每天重置（太平洋时间 0 点）。可以在设置里切换到 Claude，或明天再用。":`所有可用的 Gemini 模型都在限速中。约 ${err.retryAfter||30} 秒后再拍即可；接下来 10 分钟会自动改用单次识别以节省额度。`}
     showFail(k==="image"?"":thumb,t,p||("原因："+err.message));
   }
   finally{b.disabled=false;b.classList.remove("busy")}
