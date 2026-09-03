@@ -286,7 +286,7 @@ input[type=file]{display:none}
       <div class="kbig"><span class="v sk" style="width:120px;height:40px"></span></div>
       <div class="macros" style="margin-top:14px"><div class="macro sk" style="height:64px"></div><div class="macro sk" style="height:64px"></div><div class="macro sk" style="height:64px"></div></div>
       <div class="card" style="padding:18px"><div class="sk" style="height:16px;width:70%"></div><div class="sk" style="height:16px;width:55%;margin-top:14px"></div><div class="sk" style="height:16px;width:62%;margin-top:14px"></div></div>
-      <div class="hint" style="text-align:center;margin-top:14px">两次独立估算取平均，再对照成分表核对，通常 6–10 秒</div>
+      <div class="hint" id="waitHint" style="text-align:center;margin-top:14px">两次独立估算取平均，再对照成分表核对，通常 6–10 秒</div>
     </div>
     <div id="failBlock" class="hide">
       <div class="fail"><div class="ic">🍽️</div><h3 id="failT">未识别到食物</h3><p id="failP">请对准食物，光线充足，重新拍一张。</p></div>
@@ -481,6 +481,7 @@ $("#openSet").onclick=()=>go("pSet");
 
 /* ---------- AI API (Claude / Gemini) ---------- */
 class ApiError extends Error{constructor(kind,msg){super(msg);this.kind=kind}}
+let rateLimitedUntil=0; const lowQuota=()=>Date.now()<rateLimitedUntil;
 const inArtifact=()=>!!window.storage;
 const sleep=ms=>new Promise(r=>setTimeout(r,ms));
 async function fetchRetry(url,opt,tries=3){
@@ -491,7 +492,11 @@ async function fetchRetry(url,opt,tries=3){
       let m="";try{m=(await res.json()).error?.message||""}catch(e){}
       if(res.status!==400||/api key|API_KEY|permission/i.test(m))throw new ApiError("nokey","API 密钥无效或已过期");
       return {json:async()=>({error:{message:m||"请求被拒绝"}})}}
-    if(res.status===429||res.status>=500){if(a<tries-1){await sleep(1200*(a+1));continue}throw new ApiError("busy","识别服务繁忙")}
+    if(res.status===429||res.status>=500){
+      let m="",delay=0;try{const j=await res.clone().json();m=j.error?.message||"";const d=JSON.stringify(j.error?.details||"");const r=d.match(/retryDelay[^\d]*(\d+)/)||m.match(/retry in ([\d.]+)s/i);if(r)delay=Math.ceil(+r[1])}catch(e){}
+      if(res.status===429){rateLimitedUntil=Date.now()+10*60*1000;const daily=/per day|daily|PerDay|quota exceeded for quota metric.*day/i.test(m);
+        const err=new ApiError("busy",daily?"今日免费额度已用完":"请求太频繁");err.retryAfter=delay||(daily?0:20);err.daily=daily;throw err}
+      if(a<tries-1){await sleep(1200*(a+1));continue}throw new ApiError("busy","识别服务繁忙")}
     return res}
   return res}
 /* pick the newest Flash model this key can use; cached in profile.geminiModel */
@@ -577,12 +582,15 @@ function normalizeItem(i){
 async function recognize(img){
   const ask=(tries=1)=>askAI(RECOGNIZE_SYSTEM,"识别并估算这张照片里所有食物的份量与每100g营养成分。",{type:img.type,data:img.data},{tries}).then(t=>{
     const parsed=extractJSON(t);const items=(parsed.items||[]).map(normalizeItem).filter(Boolean);return {label:parsed.label||"",items,total:items.reduce((a,i)=>a+i.kcal,0)}});
-  const first=await Promise.allSettled([ask(),ask()]);
+  const first=await Promise.allSettled(lowQuota()?[ask()]:[ask(),ask()]);
   let runs=first.filter(r=>r.status==="fulfilled").map(r=>r.value);
-  if(!runs.length){const err=first[0].reason;if(err&&(err.kind==="nokey"||err.kind==="network"))throw err;runs=[await ask(2)]} // transient: one careful retry
+  if(!runs.length){const err=first[0].reason;if(err&&(err.kind==="nokey"||err.kind==="network"))throw err;
+    if(err&&err.kind==="busy"){if(err.daily||!err.retryAfter||err.retryAfter>45)throw err;
+      for(let t=err.retryAfter;t>0;t--){$("#resSub").textContent=`${MEALS[mealNow()]} · 免费额度限速，${t} 秒后自动重试`;await sleep(1000)}}
+    runs=[await ask(1)]} // one careful retry
   const spread=(a,b)=>Math.abs(a-b)/Math.max(1,(a+b)/2);
   let allTotals=null;
-  if(runs.length===2&&runs[0].total&&runs[1].total&&spread(runs[0].total,runs[1].total)>0.25){
+  if(!lowQuota()&&runs.length===2&&runs[0].total&&runs[1].total&&spread(runs[0].total,runs[1].total)>0.25){
     $("#resSub").textContent=`${MEALS[mealNow()]} · 两次结果差异较大，再核对一次`;
     try{runs.push(await ask())}catch(e){}
     runs.sort((a,b)=>a.total-b.total); allTotals=runs.map(r=>r.total); runs=[runs[Math.floor(runs.length/2)]]; // median run
@@ -621,7 +629,7 @@ async function verifyItems(items){
 $("#testKey").onclick=async()=>{readForm();const o=$("#testOut");o.textContent="连接中…";o.style.color="";
   try{await askAI("只回复 OK。","OK",null);o.textContent="✓ 识别服务连接正常"+((profile.provider||"gemini")==="gemini"&&profile.geminiModel?"（"+profile.geminiModel+"）":"");o.style.color="var(--green)";
     profile.target=profile.target||computeTarget(profile).target;await store.set("higher:profile",profile)}
-  catch(e){const k=e.kind||"server";o.textContent="✕ "+(k==="nokey"?e.message:FAIL_TEXT[k][0])+(k==="server"?"："+e.message:"");o.style.color="#b91c1c"}};
+  catch(e){const k=e.kind||"server";o.textContent="✕ "+(k==="nokey"||k==="busy"?e.message:FAIL_TEXT[k][0])+(k==="server"?"："+e.message:"")+(k==="busy"&&!e.daily?`（约 ${e.retryAfter||30} 秒后可再试）`:"");o.style.color="#b91c1c"}};
 
 /* ---------- photo → calories ---------- */
 const mealNow=()=>{const h=new Date().getHours()+new Date().getMinutes()/60;return h<10.5?"breakfast":h<14.5?"lunch":h<17?"snack":h<21?"dinner":"snack"};
@@ -637,15 +645,16 @@ $("#file").onchange=async e=>{
     if(!res.items.length){showFail(thumb,"未识别到食物","照片里没有看到可识别的食物。请对准食物、光线充足，重新拍一张。");return}
     $("#resSub").textContent=`${MEALS[mealNow()]} · 核对成分表`;
     let items=res.items,verified=false,changed=0;
-    try{const v=await verifyItems(items);items=v.items;changed=v.changed;verified=v.ok}catch(e){} // verification is best-effort
+    if(!lowQuota()){try{const v=await verifyItems(items);items=v.items;changed=v.changed;verified=v.ok}catch(e){}} // best-effort; skipped while rate-limited
     pending={meal:mealNow(),items,label:res.label,img:thumb,range:res.range,runs:res.runs,verified,changed};showResult();
   }catch(err){
     const k=err.kind||"server";let [t,p]=FAIL_TEXT[k];if(k==="nokey"){t=err.message;if(profile.apiKey)p="请检查设置里的密钥是否完整、是否与所选服务匹配（Gemini / Claude）。"}
+    if(k==="busy"){t=err.message||t;p=err.daily?"Gemini 免费额度每天重置（太平洋时间 0 点）。可以在设置里切换到 Claude，或明天再用。":`Gemini 免费档限制每分钟请求数。约 ${err.retryAfter||30} 秒后再拍即可；接下来 10 分钟会自动改用单次识别以节省额度。`}
     showFail(k==="image"?"":thumb,t,p||("原因："+err.message));
   }
   finally{b.disabled=false;b.classList.remove("busy")}
 };
-function showPending(img){$("#thumb").src=img;$("#thumb").style.display="block";
+function showPending(img){$("#thumb").src=img;$("#thumb").style.display="block";$("#waitHint").textContent=lowQuota()?"节省额度模式：单次识别，通常 3–5 秒":"两次独立估算取平均，再对照成分表核对，通常 6–10 秒";
   $("#resTitle").textContent="识别中";$("#resSub").textContent=`${MEALS[mealNow()]} · 正在分析食物与份量`;
   $("#okBlock").classList.add("hide");$("#failBlock").classList.add("hide");$("#waitBlock").classList.remove("hide");$("#result").classList.add("show")}
 function showFail(img,t,p){$("#thumb").src=img;$("#thumb").style.display=img?"block":"none";
