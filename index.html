@@ -31,6 +31,8 @@ input::placeholder{color:#c7c7cc}
 .brand{font-weight:800;font-size:16px;letter-spacing:.3em}
 .streak{display:flex;align-items:center;gap:6px;background:var(--card);border-radius:999px;padding:6px 12px;font-size:13px;font-weight:700}
 .streak i{width:8px;height:8px;border-radius:50%;background:var(--ink);display:inline-block}
+.tr{display:flex;align-items:center;gap:8px}
+.gear{width:36px;height:36px;border-radius:50%;background:var(--card);display:flex;align-items:center;justify-content:center;box-shadow:0 1px 2px rgba(0,0,0,.05)}
 
 /* week strip */
 .week{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;margin-top:20px}
@@ -104,11 +106,6 @@ input[type=file]{display:none}
 .stat .v{font-size:32px;font-weight:800;letter-spacing:-.04em}
 .stat .v small{font-size:13px;color:var(--mute);font-weight:600;margin-left:4px}
 .stat .l{font-size:13px;color:var(--mute);font-weight:600}
-.wline{height:120px;margin-top:14px}
-.wline svg{width:100%;height:100%;overflow:visible}
-.wline path{fill:none;stroke:var(--ink);stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round}
-.wline circle{fill:var(--ink)}
-.wline text{font-size:11px;font-weight:600;fill:var(--mute)}
 .inl{display:flex;gap:10px;margin-top:14px}
 .inl input{flex:1;min-width:0;width:0;height:48px;border-radius:14px;border:1.5px solid var(--line);background:var(--bg);padding:0 14px;font-size:16px;font-weight:700;outline:none}
 .inl input:focus{border-color:var(--ink)}
@@ -179,6 +176,7 @@ input[type=file]{display:none}
 .fail h3{font-size:20px;font-weight:800;margin-top:14px;letter-spacing:-.02em}
 .fail p{color:var(--mute);font-size:14px;line-height:1.6;margin-top:8px}
 .err{color:#b91c1c;font-size:14px;margin-top:12px;line-height:1.5}
+.diag{font-size:11px;color:var(--mute);line-height:1.5;margin:6px 4px 12px;word-break:break-all;font-family:ui-monospace,Menlo,monospace;text-align:left;background:var(--card);border-radius:12px;padding:10px 12px}
 .sk{display:block;border-radius:10px;background:linear-gradient(90deg,#ececee 25%,#f7f7f8 50%,#ececee 75%);background-size:200% 100%;animation:sk 1.3s ease infinite}
 @keyframes sk{to{background-position:-200% 0}}
 @media (prefers-reduced-motion:reduce){.ring .fg,.sheet,.bar i{transition:none}}
@@ -189,7 +187,7 @@ input[type=file]{display:none}
 
   <!-- HOME -->
   <div class="page" id="pHome">
-    <div class="top"><div class="brand">HIGHER</div><div class="streak"><i></i><span id="streak">0 天</span></div></div>
+    <div class="top"><div class="brand">HIGHER</div><div class="tr"><div class="streak"><i></i><span id="streak">0 天</span></div><button class="gear openSet"><svg viewBox="0 0 24 24" style="width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg></button></div></div>
     <div class="week" id="week"></div>
 
     <div class="card hero">
@@ -209,7 +207,7 @@ input[type=file]{display:none}
 
   <!-- ANALYTICS -->
   <div class="page hide" id="pStats">
-    <div class="top"><div class="brand">HIGHER</div></div>
+    <div class="top"><div class="brand">HIGHER</div><button class="gear openSet"><svg viewBox="0 0 24 24" style="width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg></button></div>
     <h4 style="margin-top:22px">最近 7 天</h4>
     <div class="card">
       <div class="stat"><div><div class="v" id="avg">0<small>kcal / 天</small></div><div class="l">平均摄入</div></div><div style="text-align:right"><div class="v" id="hitDays">0<small>/ 7</small></div><div class="l">达标天数</div></div></div>
@@ -260,7 +258,6 @@ input[type=file]{display:none}
     <button class="on" data-p="pHome"><svg viewBox="0 0 24 24"><path d="M3 11l9-8 9 8v9a2 2 0 0 1-2 2h-4v-7H9v7H5a2 2 0 0 1-2-2z"/></svg>首页</button>
     <button data-p="pStats"><svg viewBox="0 0 24 24"><path d="M4 20V10M10 20V4M16 20v-6M22 20H2"/></svg>数据</button>
   </nav>
-  <button id="openSet" style="position:fixed;right:18px;top:calc(env(safe-area-inset-top) + 14px);z-index:3;width:36px;height:36px;border-radius:50%;background:var(--card);display:flex;align-items:center;justify-content:center;box-shadow:0 1px 2px rgba(0,0,0,.05)"><svg viewBox="0 0 24 24" style="width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg></button>
 </div>
 
 <!-- RESULT -->
@@ -290,6 +287,7 @@ input[type=file]{display:none}
     </div>
     <div id="failBlock" class="hide">
       <div class="fail"><div class="ic">🍽️</div><h3 id="failT">未识别到食物</h3><p id="failP">请对准食物，光线充足，重新拍一张。</p></div>
+      <div class="diag hide" id="failDiag"></div>
       <button class="pri" id="retake">重新拍照</button>
       <button class="sec" id="failClose">关闭</button>
     </div>
@@ -302,8 +300,9 @@ const MEALS={breakfast:"早餐",lunch:"中餐",dinner:"晚餐",snack:"加餐"};
 let profile={sex:"m",age:25,height:175,weight:75,bf:22,bfGoal:15,weeks:12,act:1.375,target:0,apiKey:"",provider:"gemini"};
 let log={};      // {date:[{id,meal,time,label,kcal,p,c,f,items,img}]}
 let body=[];     // [{date,weight,bf}]
-let pending=null, selDate=null;
+let pending=null, selDate=null, job=0; // job: increments per photo; a cancelled job must not reopen the sheet
 const $=s=>document.querySelector(s);
+const esc=t=>String(t??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 const key=d=>d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");
 const todayKey=()=>key(new Date());
 const mem={};
@@ -365,7 +364,7 @@ function renderHome(){
   $("#logTitle").textContent=isToday?"今天的记录":selDate.slice(5).replace("-","月")+"日的记录";
   const entries=[...(log[selDate]||[])].reverse();
   $("#logs").innerHTML=entries.length?entries.map(e=>`<div class="log">${e.img?`<img src="${e.img}" alt="">`:`<div class="ph">🍽️</div>`}
-    <div class="b"><div class="t"><span>${e.label}</span><small>${MEALS[e.meal]} · ${e.time}</small></div>
+    <div class="b"><div class="t"><span>${esc(e.label)}</span><small>${MEALS[e.meal]} · ${e.time}</small></div>
     <div class="k">${e.kcal}<small>kcal</small></div>
     <div class="m"><span>蛋白 <b>${e.p||0}g</b></span><span>碳水 <b>${e.c||0}g</b></span><span>脂肪 <b>${e.f||0}g</b></span></div></div></div>`).join("")
     :`<div class="empty">${isToday?"还没有记录。点下方 + 拍一张照片，自动识别热量并记入。":"这一天没有记录"}</div>`;
@@ -473,15 +472,15 @@ $("#resetDay").onclick=async()=>{if(!confirm("清空今天的记录？"))return;
 /* ---------- nav ---------- */
 function go(p){document.querySelectorAll(".page").forEach(x=>x.classList.toggle("hide",x.id!==p));
   document.querySelectorAll(".tabs button").forEach(b=>b.classList.toggle("on",b.dataset.p===p));
-  $("#openSet").style.display=p==="pSet"?"none":"flex";
   if(p==="pHome"){selDate=todayKey();renderHome()}if(p==="pStats")renderStats();if(p==="pSet"){fillForm();renderCalc()}
   document.getElementById(p).scrollTop=0}
 document.querySelectorAll(".tabs button").forEach(b=>b.onclick=()=>go(b.dataset.p));
-$("#openSet").onclick=()=>go("pSet");
+document.querySelectorAll(".openSet").forEach(b=>b.onclick=()=>go("pSet"));
 
 /* ---------- AI API (Claude / Gemini) ---------- */
 class ApiError extends Error{constructor(kind,msg){super(msg);this.kind=kind}}
 let rateLimitedUntil=0; const lowQuota=()=>Date.now()<rateLimitedUntil;
+let diag=[]; const note=(model,msg)=>{diag.push(`${model}: ${String(msg).slice(0,140)}`);if(diag.length>8)diag.shift()};
 const inArtifact=()=>!!window.storage;
 const sleep=ms=>new Promise(r=>setTimeout(r,ms));
 async function fetchRetry(url,opt,tries=3){
@@ -494,16 +493,21 @@ async function fetchRetry(url,opt,tries=3){
       return {json:async()=>({error:{message:m||"请求被拒绝"}})}}
     if(res.status===429||res.status>=500){
       let m="",delay=0;try{const j=await res.clone().json();m=j.error?.message||"";const d=JSON.stringify(j.error?.details||"");const r=d.match(/retryDelay[^\d]*(\d+)/)||m.match(/retry in ([\d.]+)s/i);if(r)delay=Math.ceil(+r[1])}catch(e){}
-      if(res.status===429){const daily=/per day|daily|PerDay|quota exceeded for quota metric.*day/i.test(m);
-        const err=new ApiError("busy",daily?"今日免费额度已用完":"请求太频繁");err.retryAfter=delay||(daily?0:20);err.daily=daily;throw err}
-      if(a<tries-1){await sleep(1200*(a+1));continue}throw new ApiError("busy","识别服务繁忙")}
+      if(res.status===429){const daily=/per day|daily|PerDay|quota exceeded for quota metric.*day|limit: 0/i.test(m);
+        const err=new ApiError("busy",daily?"今日免费额度已用完":"请求太频繁");err.retryAfter=delay||(daily?0:20);err.daily=daily;err.raw=`HTTP 429 ${m}`;throw err}
+      if(a<tries-1){await sleep(1200*(a+1));continue}const err=new ApiError("busy",res.status===503?"模型暂时过载":"识别服务繁忙");err.raw=`HTTP ${res.status} ${m}`;throw err}
     return res}
   return res}
 /* Ordered list of Flash models this key can use (quotas are per model, so we can hop between them). */
 const GEMINI_FALLBACK=["gemini-3.6-flash","gemini-3.6-flash-lite","gemini-3.5-flash","gemini-3-flash","gemini-3.1-flash-lite","gemini-2.5-flash","gemini-2.5-flash-lite"];
 const cooldown={};   // model -> timestamp until which it is rate-limited
+let modelsInflight=null;
 async function geminiModels(refresh){
   if(profile.geminiModels&&profile.geminiModels.length&&!refresh)return profile.geminiModels;
+  if(modelsInflight)return modelsInflight;
+  modelsInflight=(async()=>{try{return await geminiModelsFetch()}finally{modelsInflight=null}})();return modelsInflight;
+}
+async function geminiModelsFetch(){
   try{
     const r=await fetch("https://generativelanguage.googleapis.com/v1beta/models?pageSize=200&key="+encodeURIComponent(profile.apiKey));
     if(r.status===400||r.status===403)throw new ApiError("nokey","API 密钥无效或已过期");
@@ -525,22 +529,23 @@ async function askAI(system,text,image,opts={}){
   if(!profile.apiKey&&!(prov==="claude"&&inArtifact()))throw new ApiError("nokey","还没有填 API 密钥");
   if(prov==="gemini"){
     const parts=[];if(image)parts.push({inline_data:{mime_type:image.type,data:image.data}});parts.push({text});
-    const mk=fast=>{const g={temperature:0.1,maxOutputTokens:1400};
-      if(image)g.responseMimeType="application/json";
+    const mk=fast=>{const g={temperature:0.1,maxOutputTokens:2048};
+      if(image||opts.json)g.responseMimeType="application/json";
       if(fast)g.thinkingConfig={thinkingBudget:image?THINK_BUDGET:0};
       return JSON.stringify({system_instruction:{parts:[{text:system}]},contents:[{parts}],generationConfig:g})};
     let fast=profile.geminiFast!==false, list=await geminiModels(false); const skip=new Set(); let lastBusy=null;
+    list.forEach(m=>{if(cooldown[m]&&cooldown[m]>Date.now()&&!diag.some(d=>d.startsWith(m+": 跳过")))note(m,`跳过（${cooldown[m]-Date.now()>3e6?"今日额度已用完":"限速冷却中 "+Math.ceil((cooldown[m]-Date.now())/1000)+"s"}）`)});
     for(let round=0;round<6;round++){
       let model=pickModel(list,skip);
       if(!model){if(lastBusy)throw lastBusy;list=await geminiModels(true);model=pickModel(list,skip);if(!model)throw new ApiError("busy","识别服务繁忙")}
       let res;
       try{res=await fetchRetry(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${encodeURIComponent(profile.apiKey)}`,
         {method:"POST",headers:{"Content-Type":"application/json"},body:mk(fast)},opts.tries||3)}
-      catch(e){if(e.kind==="busy"){cooldown[model]=Date.now()+(e.daily?3600:(e.retryAfter||60))*1000;lastBusy=e;skip.add(model);continue}throw e}
+      catch(e){note(model,e.raw||e.message);if(e.kind==="busy"){cooldown[model]=Date.now()+(e.daily?3600:(e.retryAfter||60))*1000;lastBusy=e;skip.add(model);continue}throw e}
       const j=await res.json();
       if(j.error){const m=j.error.message||"";
         if(fast&&/thinking|budget|generationConfig|Unknown name|Invalid JSON payload/i.test(m)){fast=false;profile.geminiFast=false;store.set("higher:profile",profile);continue}
-        if(/not available|not found|no longer|deprecated|not supported/i.test(m)){skip.add(model);profile.geminiModels=list.filter(x=>x!==model);store.set("higher:profile",profile);continue}
+        note(model,m);if(/not available|not found|no longer|deprecated|not supported/i.test(m)){skip.add(model);profile.geminiModels=list.filter(x=>x!==model);store.set("higher:profile",profile);continue}
         throw new ApiError("server",m||"服务返回错误")}
       profile.geminiModel=model;
       return (j.candidates?.[0]?.content?.parts||[]).map(p=>p.text||"").join("");
@@ -550,7 +555,7 @@ async function askAI(system,text,image,opts={}){
   const headers={"Content-Type":"application/json"};
   if(profile.apiKey){headers["x-api-key"]=profile.apiKey;headers["anthropic-version"]="2023-06-01";headers["anthropic-dangerous-direct-browser-access"]="true"}
   const content=[];if(image)content.push({type:"image",source:{type:"base64",media_type:image.type,data:image.data}});content.push({type:"text",text});
-  const res=await fetchRetry("https://api.anthropic.com/v1/messages",{method:"POST",headers,body:JSON.stringify({model:"claude-sonnet-4-6",max_tokens:1400,system,messages:[{role:"user",content}]})},opts.tries||3);
+  const res=await fetchRetry("https://api.anthropic.com/v1/messages",{method:"POST",headers,body:JSON.stringify({model:"claude-sonnet-4-6",max_tokens:2048,system,messages:[{role:"user",content}]})},opts.tries||3);
   const j=await res.json();if(j.error)throw new ApiError(j.error.type==="authentication_error"?"nokey":"server",j.error.message||"服务返回错误");
   return (j.content||[]).filter(c=>c.type==="text").map(c=>c.text).join("");
 }
@@ -619,7 +624,7 @@ const VERIFY_SYSTEM=["你是营养数据审核员。下面是从一张照片识�
   "只返回JSON，不要其他文字：{\"items\":[{\"idx\":序号,\"grams\":整数,\"kcal100\":数字,\"p100\":数字,\"c100\":数字,\"f100\":数字,\"a100\":数字,\"changed\":true|false}]}。序号与输入一一对应，数量不得增减。"].join("\n");
 async function verifyItems(items){
   const payload=items.map((it,idx)=>({idx,name:it.name.replace(/ 约\d+g$/,""),grams:it.grams,kcal100:it.k100,p100:it.p100,c100:it.c100,f100:it.f100,a100:it.a100}));
-  const txt=await askAI(VERIFY_SYSTEM,"核对：\n"+JSON.stringify(payload),null,{tries:1});
+  const txt=await askAI(VERIFY_SYSTEM,"核对：\n"+JSON.stringify(payload),null,{tries:1,json:true});
   const out=(extractJSON(txt).items||[]);
   if(out.length!==items.length)return {items,changed:0,ok:false};
   let changed=0;
@@ -633,10 +638,10 @@ async function verifyItems(items){
     return {...it,name:it.name.replace(/ 约\d+g$/,"")+` 约${g}g`,grams:g,kcal:nk,p:r(P),c:r(C),f:r(F),alcohol:r(A),k100:k,p100:P,c100:C,f100:F,a100:A,confidence:it.mismatch&&Math.abs(nk-it.own)/Math.max(1,it.own)<0.2?"medium":it.confidence}});
   return {items:fixed,changed,ok:true};
 }
-$("#testKey").onclick=async()=>{readForm();const o=$("#testOut");o.textContent="连接中…";o.style.color="";
+$("#testKey").onclick=async()=>{readForm();const o=$("#testOut");o.textContent="连接中…";o.style.color="";diag=[];
   try{await askAI("只回复 OK。","OK",null);o.textContent="✓ 识别服务连接正常"+((profile.provider||"gemini")==="gemini"&&profile.geminiModel?"（"+profile.geminiModel+"）":"");o.style.color="var(--green)";
     profile.target=profile.target||computeTarget(profile).target;await store.set("higher:profile",profile)}
-  catch(e){const k=e.kind||"server";o.textContent="✕ "+(k==="nokey"||k==="busy"?e.message:FAIL_TEXT[k][0])+(k==="server"?"："+e.message:"")+(k==="busy"&&!e.daily?`（约 ${e.retryAfter||30} 秒后可再试）`:"");o.style.color="#b91c1c"}};
+  catch(e){const k=e.kind||"server";o.textContent="✕ "+(k==="nokey"||k==="busy"?e.message:FAIL_TEXT[k][0])+(k==="server"?"："+e.message:"")+(k==="busy"&&!e.daily?`（约 ${e.retryAfter||30} 秒后可再试）`:"")+(diag.length?"\n"+diag.join("\n"):"");o.style.whiteSpace="pre-wrap";o.style.color="#b91c1c";diag=[]}};
 
 /* ---------- photo → calories ---------- */
 const mealNow=()=>{const h=new Date().getHours()+new Date().getMinutes()/60;return h<10.5?"breakfast":h<14.5?"lunch":h<17?"snack":h<21?"dinner":"snack"};
@@ -644,19 +649,23 @@ $("#shoot").onclick=()=>$("#file").click();$("#fixRes").onclick=()=>{$("#result"
 $("#file").onchange=async e=>{
   const f=e.target.files[0];if(!f)return;e.target.value="";
   const b=$("#shoot");b.disabled=true;b.classList.add("busy");
+  const my=++job; const alive=()=>my===job&&$("#result").classList.contains("show"); diag=[];
   let thumb="";
   try{
     const img=await shrink(f).catch(()=>{throw new ApiError("image","照片读取失败")});thumb=img.thumb;
     showPending(thumb);
     const res=await recognize(img);
+    if(!alive())return;
     if(!res.items.length){showFail(thumb,"未识别到食物","照片里没有看到可识别的食物。请对准食物、光线充足，重新拍一张。");return}
     $("#resSub").textContent=`${MEALS[mealNow()]} · 核对成分表`;
     let items=res.items,verified=false,changed=0;
     if(!lowQuota()){try{const v=await verifyItems(items);items=v.items;changed=v.changed;verified=v.ok}catch(e){}} // best-effort; skipped while rate-limited
+    if(!alive())return;
     pending={meal:mealNow(),items,label:res.label,img:thumb,range:res.range,runs:res.runs,verified,changed};showResult();
   }catch(err){
+    if(!alive())return;
     const k=err.kind||"server";let [t,p]=FAIL_TEXT[k];if(k==="nokey"){t=err.message;if(profile.apiKey)p="请检查设置里的密钥是否完整、是否与所选服务匹配（Gemini / Claude）。"}
-    if(k==="busy"){t=err.message||t;p=err.daily?"Gemini 免费额度每天重置（太平洋时间 0 点）。可以在设置里切换到 Claude，或明天再用。":`所有可用的 Gemini 模型都在限速中。约 ${err.retryAfter||30} 秒后再拍即可；接下来 10 分钟会自动改用单次识别以节省额度。`}
+    if(k==="busy"){t=err.message||t;p=err.daily?"这个 Google 账号在可用模型上的今日免费额度已用完（每天太平洋时间 0 点重置）。可以在 AI Studio 开通按量付费（每张照片约 1 分钱），或在设置里切换到 Claude。":`所有可用的 Gemini 模型都在限速中。约 ${err.retryAfter||30} 秒后再拍即可；接下来 10 分钟会自动改用单次识别以节省额度。`}
     showFail(k==="image"?"":thumb,t,p||("原因："+err.message));
   }
   finally{b.disabled=false;b.classList.remove("busy")}
@@ -665,6 +674,7 @@ function showPending(img){$("#thumb").src=img;$("#thumb").style.display="block";
   $("#resTitle").textContent="识别中";$("#resSub").textContent=`${MEALS[mealNow()]} · 正在分析食物与份量`;
   $("#okBlock").classList.add("hide");$("#failBlock").classList.add("hide");$("#waitBlock").classList.remove("hide");$("#result").classList.add("show")}
 function showFail(img,t,p){$("#thumb").src=img;$("#thumb").style.display=img?"block":"none";
+  const d=$("#failDiag");d.textContent=diag.length?"诊断信息\n"+diag.join("\n"):"";d.classList.toggle("hide",!diag.length);d.style.whiteSpace="pre-wrap";diag=[];
   $("#resTitle").textContent="";$("#resSub").textContent="";$("#failT").textContent=t;$("#failP").textContent=p;
   $("#okBlock").classList.add("hide");$("#waitBlock").classList.add("hide");$("#failBlock").classList.remove("hide");$("#result").classList.add("show")}
 $("#retake").onclick=()=>{$("#result").classList.remove("show");$("#file").click()};
@@ -676,22 +686,23 @@ function shrink(file){return new Promise((ok,no)=>{const img=new Image(),url=URL
   img.onerror=()=>no(new Error("图片读取失败"));img.src=url})}
 const sum=(k)=>pending.items.reduce((a,i)=>a+(+i[k]||0),0);
 function showResult(){
-  $("#resTitle").textContent=pending.label||"这一餐";$("#resSub").textContent=`${MEALS[pending.meal]} · ${new Date().toLocaleTimeString("zh-CN",{hour:"2-digit",minute:"2-digit"})}`;
+  $("#resTitle").textContent=(pending.label||"这一餐").slice(0,16);$("#resSub").textContent=`${MEALS[pending.meal]} · ${new Date().toLocaleTimeString("zh-CN",{hour:"2-digit",minute:"2-digit"})}`;
   $("#thumb").src=pending.img;$("#thumb").style.display="block";
-  $("#items").innerHTML=pending.items.map(it=>`<li><span>${it.name}${it.confidence==="low"?' <em style="color:#b45309;width:auto">· 不确定</em>':""}</span><b>${Math.round(it.kcal)}</b><em>kcal</em></li>`).join("");
+  $("#items").innerHTML=pending.items.map(it=>`<li><span>${esc(it.name)}${it.confidence==="low"?' <em style="color:#b45309;width:auto">· 不确定</em>':""}</span><b>${Math.round(it.kcal)}</b><em>kcal</em></li>`).join("");
   const low=pending.items.some(i=>i.confidence==="low"), adj=pending.items.some(i=>i.adjusted);
   const rg=pending.range&&pending.range[1]-pending.range[0]>=15?(pending.runs>=3?`三次估算 ${pending.range[0]}–${pending.range[1]} kcal，已取中间值。`:`两次估算 ${pending.range[0]}–${pending.range[1]} kcal，已取平均。`):"";
   $("#resNote").textContent=rg+(pending.verified?(pending.changed?`已对照成分表核对并修正 ${pending.changed} 项。`:"已对照成分表核对。"):"")+(low?"部分食物看不清或份量不确定。":"")+(adj?"已按营养素校正热量。":"");
   $("#okBlock").classList.remove("hide");$("#waitBlock").classList.add("hide");$("#failBlock").classList.add("hide");
   sumRes();$("#result").classList.add("show")}
 function sumRes(){$("#resTot").textContent=sum("kcal");$("#rP").textContent=sum("p")+"g";$("#rC").textContent=sum("c")+"g";$("#rF").textContent=sum("f")+"g"}
-$("#cancelRes").onclick=()=>$("#result").classList.remove("show");
-$("#confirmRes").onclick=async()=>{const k=todayKey();log[k]=log[k]||[];
+$("#cancelRes").onclick=()=>{job++;$("#result").classList.remove("show")};
+$("#confirmRes").onclick=async()=>{if(!pending||pending.saving)return;pending.saving=true;const k=todayKey();log[k]=log[k]||[];
+  const slim=pending.items.map(i=>({name:i.name,grams:i.grams,kcal:i.kcal,p:i.p,c:i.c,f:i.f}));
   log[k].push({id:Date.now(),meal:pending.meal,time:new Date().toLocaleTimeString("zh-CN",{hour:"2-digit",minute:"2-digit"}),
-    label:pending.label||pending.items.map(i=>i.name.split(" ")[0]).join("、"),kcal:sum("kcal"),p:sum("p"),c:sum("c"),f:sum("f"),items:pending.items,img:pending.img});
+    label:pending.label||pending.items.map(i=>i.name.split(" ")[0]).join("、"),kcal:sum("kcal"),p:sum("p"),c:sum("c"),f:sum("f"),items:slim,img:pending.img});
   // keep storage small: drop images older than 14 days
   const cutoff=new Date();cutoff.setDate(cutoff.getDate()-14);for(const d in log)if(d<key(cutoff))log[d].forEach(e=>delete e.img);
-  await store.set("higher:log",log);$("#result").classList.remove("show");go("pHome")};
+  await store.set("higher:log",log);pending=null;$("#result").classList.remove("show");go("pHome")};
 
 /* ---------- boot ---------- */
 (async()=>{const p=await store.get("higher:profile");if(p)profile={...profile,...p};
