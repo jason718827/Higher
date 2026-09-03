@@ -442,7 +442,7 @@ $("#wAdd").onclick=async()=>{const w=+$("#wIn").value,bf=+$("#bfIn").value;if(!w
 
 /* ---------- settings ---------- */
 function readForm(){profile.age=+$("#age").value||25;profile.height=+$("#height").value||175;profile.weight=+$("#weight").value||70;
-  profile.bf=+$("#bf").value||20;profile.bfGoal=+$("#bfGoal").value||15;profile.weeks=+$("#weeks").value||12;profile.act=+$("#act").value;const nk=$("#apiKey").value.trim();if(nk!==profile.apiKey){profile.geminiModel="";profile.geminiModels=null}profile.apiKey=nk}
+  profile.bf=+$("#bf").value||20;profile.bfGoal=+$("#bfGoal").value||15;profile.weeks=+$("#weeks").value||12;profile.act=+$("#act").value;const nk=$("#apiKey").value.trim();if(nk!==profile.apiKey){profile.geminiModel="";profile.geminiModels=null;profile.geminiVariant=0}profile.apiKey=nk}
 const PROV_HINT={gemini:"免费。打开 aistudio.google.com，用 Google 账号登录 → Get API key → Create API key，复制到这里。不需要绑卡。",
   claude:"按量付费，约几分钱一张照片。打开 console.anthropic.com → API Keys → Create Key，并在 Billing 里充值少量额度。"};
 function fillForm(){$("#apiKey").value=profile.apiKey||"";
@@ -529,25 +529,26 @@ async function askAI(system,text,image,opts={}){
   if(!profile.apiKey&&!(prov==="claude"&&inArtifact()))throw new ApiError("nokey","还没有填 API 密钥");
   if(prov==="gemini"){
     const parts=[];if(image)parts.push({inline_data:{mime_type:image.type,data:image.data}});parts.push({text});
-    const mk=fast=>{const g={temperature:0.1,maxOutputTokens:2048};
-      if(image||opts.json)g.responseMimeType="application/json";
-      if(fast)g.thinkingConfig={thinkingBudget:image?THINK_BUDGET:0};
+    /* variant 0: small thinking budget + JSON mode; 1: no thinking config (model default); 2: plain */
+    const mk=v=>{const g={temperature:0.1,maxOutputTokens:2048};
+      if(v<2&&(image||opts.json))g.responseMimeType="application/json";
+      if(v===0&&image)g.thinkingConfig={thinkingBudget:THINK_BUDGET};   // never send budget 0: Gemini 3 rejects it
       return JSON.stringify({system_instruction:{parts:[{text:system}]},contents:[{parts}],generationConfig:g})};
-    let fast=profile.geminiFast!==false, list=await geminiModels(false); const skip=new Set(); let lastBusy=null;
+    let variant=profile.geminiVariant||0, list=await geminiModels(false); const skip=new Set(); let lastBusy=null;
     list.forEach(m=>{if(cooldown[m]&&cooldown[m]>Date.now()&&!diag.some(d=>d.startsWith(m+": 跳过")))note(m,`跳过（${cooldown[m]-Date.now()>3e6?"今日额度已用完":"限速冷却中 "+Math.ceil((cooldown[m]-Date.now())/1000)+"s"}）`)});
     for(let round=0;round<6;round++){
       let model=pickModel(list,skip);
       if(!model){if(lastBusy)throw lastBusy;list=await geminiModels(true);model=pickModel(list,skip);if(!model)throw new ApiError("busy","识别服务繁忙")}
       let res;
       try{res=await fetchRetry(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${encodeURIComponent(profile.apiKey)}`,
-        {method:"POST",headers:{"Content-Type":"application/json"},body:mk(fast)},opts.tries||3)}
+        {method:"POST",headers:{"Content-Type":"application/json"},body:mk(variant)},opts.tries||3)}
       catch(e){note(model,e.raw||e.message);if(e.kind==="busy"){cooldown[model]=Date.now()+(e.daily?3600:(e.retryAfter||60))*1000;lastBusy=e;skip.add(model);continue}throw e}
       const j=await res.json();
       if(j.error){const m=j.error.message||"";
-        if(fast&&/thinking|budget|generationConfig|Unknown name|Invalid JSON payload/i.test(m)){fast=false;profile.geminiFast=false;store.set("higher:profile",profile);continue}
+        if(variant<2&&/invalid argument|thinking|budget|generationConfig|Unknown name|Invalid JSON payload|response_mime_type|responseMimeType/i.test(m)){variant++;continue}
         note(model,m);if(/not available|not found|no longer|deprecated|not supported/i.test(m)){skip.add(model);profile.geminiModels=list.filter(x=>x!==model);store.set("higher:profile",profile);continue}
         throw new ApiError("server",m||"服务返回错误")}
-      profile.geminiModel=model;
+      profile.geminiModel=model;if(variant!==(profile.geminiVariant||0)){profile.geminiVariant=variant;store.set("higher:profile",profile)}
       return (j.candidates?.[0]?.content?.parts||[]).map(p=>p.text||"").join("");
     }
     throw lastBusy||new ApiError("busy","识别服务繁忙");
