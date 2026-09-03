@@ -1,0 +1,472 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="default" />
+<meta name="apple-mobile-web-app-title" content="HIGHER" />
+<meta name="theme-color" content="#f5f5f5" />
+<title>HIGHER</title>
+<style>
+:root{--bg:#f4f4f5;--card:#fff;--ink:#0a0a0a;--mute:#8e8e93;--line:#ececee;--ring:#e8e8ea;--green:#22c55e;
+  --ease:cubic-bezier(.22,.9,.24,1)}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;background:var(--bg);color:var(--ink);
+  font-family:-apple-system,"SF Pro Display","Helvetica Neue","PingFang SC",sans-serif;-webkit-font-smoothing:antialiased;
+  font-feature-settings:"tnum" 1;overflow:hidden}
+button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
+input,select{font:inherit;color:inherit}
+input::placeholder{color:#c7c7cc}
+.hide{display:none!important}
+
+#app{position:fixed;inset:0;display:flex;flex-direction:column}
+.page{flex:1;overflow-y:auto;overflow-x:hidden;padding:calc(env(safe-area-inset-top) + 14px) 18px 120px;-webkit-overflow-scrolling:touch}
+.page::-webkit-scrollbar{display:none}
+
+/* top */
+.top{display:flex;justify-content:space-between;align-items:center;height:36px}
+.brand{font-weight:800;font-size:16px;letter-spacing:.3em}
+.streak{display:flex;align-items:center;gap:6px;background:var(--card);border-radius:999px;padding:6px 12px;font-size:13px;font-weight:700}
+.streak i{width:8px;height:8px;border-radius:50%;background:var(--ink);display:inline-block}
+
+/* week strip */
+.week{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;margin-top:20px}
+.week button{display:flex;flex-direction:column;align-items:center;gap:8px;padding:8px 0;border-radius:14px}
+.week .d{font-size:11px;font-weight:600;color:var(--mute)}
+.week .n{width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;border:1.5px dashed #d4d4d8;color:var(--mute)}
+.week .n.done{border-style:solid;border-color:var(--ink);color:var(--ink)}
+.week .n.full{background:var(--ink);color:#fff;border-color:var(--ink)}
+.week button.sel .n{box-shadow:0 0 0 3px var(--bg),0 0 0 4.5px var(--ink)}
+
+/* cards */
+.card{background:var(--card);border-radius:22px;padding:20px;margin-top:14px;box-shadow:0 1px 2px rgba(0,0,0,.03)}
+.hero{display:flex;align-items:center;gap:18px}
+.hero .txt{flex:1;min-width:0}
+.hero .v{font-size:48px;font-weight:800;letter-spacing:-.05em;line-height:.95}
+.hero .l{font-size:14px;color:var(--mute);margin-top:6px;font-weight:500}
+.ring{position:relative;width:118px;height:118px;flex:none}
+.ring svg{width:100%;height:100%;transform:rotate(-90deg)}
+.ring circle{fill:none;stroke-width:10;stroke-linecap:round}
+.ring .bg{stroke:var(--ring)}
+.ring .fg{stroke:var(--ink);transition:stroke-dashoffset 1s var(--ease),stroke .4s}
+.ring.hit .fg{stroke:var(--green)}
+.ring .ic{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:22px}
+
+.macros{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:12px}
+.macro{background:var(--card);border-radius:20px;padding:16px 14px;display:flex;flex-direction:column;align-items:flex-start;gap:12px}
+.macro .v{font-size:22px;font-weight:800;letter-spacing:-.03em;line-height:1}
+.macro .l{font-size:12px;color:var(--mute);font-weight:600;margin-top:4px}
+.macro .ring{width:56px;height:56px;align-self:center}
+.macro .ring circle{stroke-width:6}
+.macro .ring .ic{font-size:11px;font-weight:800}
+
+h4{font-size:17px;font-weight:800;letter-spacing:-.02em;margin:28px 0 12px}
+.log{display:flex;gap:14px;align-items:center;background:var(--card);border-radius:20px;padding:12px;margin-top:10px}
+.log img{width:84px;height:84px;border-radius:14px;object-fit:cover;background:#eee;flex:none}
+.log .ph{width:84px;height:84px;border-radius:14px;background:#f0f0f2;display:flex;align-items:center;justify-content:center;font-size:26px;flex:none}
+.log .b{flex:1;min-width:0}
+.log .t{display:flex;justify-content:space-between;gap:8px;font-size:15px;font-weight:700;letter-spacing:-.01em}
+.log .t small{color:var(--mute);font-weight:600;font-size:12px;flex:none}
+.log .k{font-size:18px;font-weight:800;margin-top:6px;letter-spacing:-.02em}
+.log .k small{font-size:12px;color:var(--mute);font-weight:600;margin-left:2px}
+.log .m{display:flex;gap:12px;margin-top:8px;font-size:12px;color:var(--mute);font-weight:600}
+.log .m b{color:var(--ink);font-weight:700}
+.empty{color:var(--mute);font-size:14px;line-height:1.6;padding:18px 4px;text-align:center}
+
+/* fab + tabs */
+.fab{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(env(safe-area-inset-bottom) + 58px);z-index:5;
+  width:64px;height:64px;border-radius:50%;background:var(--ink);color:#fff;font-size:34px;font-weight:300;line-height:1;
+  display:flex;align-items:center;justify-content:center;box-shadow:0 10px 24px rgba(0,0,0,.22);transition:transform .15s}
+.fab:active{transform:translateX(-50%) scale(.94)}
+.fab.busy{font-size:0}
+.fab.busy::after{content:"";width:22px;height:22px;border-radius:50%;border:2.5px solid #fff;border-top-color:transparent;animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.tabs{position:fixed;left:0;right:0;bottom:0;z-index:4;display:grid;grid-template-columns:1fr 1fr;padding:10px 40px calc(env(safe-area-inset-bottom) + 10px);
+  background:rgba(255,255,255,.92);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);border-top:1px solid var(--line)}
+.tabs button{display:flex;flex-direction:column;align-items:center;gap:4px;font-size:11px;font-weight:600;color:var(--mute);padding:6px}
+.tabs button.on{color:var(--ink)}
+.tabs svg{width:24px;height:24px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+input[type=file]{display:none}
+
+/* analytics */
+.bars{display:flex;align-items:flex-end;gap:8px;height:150px;margin-top:18px;position:relative}
+.bars .goal{position:absolute;left:0;right:0;border-top:1.5px dashed #c8c8cc}
+.bars .goal span{position:absolute;right:0;top:-18px;font-size:11px;color:var(--mute);font-weight:600}
+.bar{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%}
+.bar i{width:100%;max-width:28px;border-radius:8px 8px 4px 4px;background:var(--ink);transition:height .8s var(--ease)}
+.bar i.hit{background:var(--green)}
+.bar i.none{background:var(--ring)}
+.bar span{font-size:11px;color:var(--mute);margin-top:8px;font-weight:600}
+.stat{display:flex;justify-content:space-between;align-items:baseline}
+.stat .v{font-size:32px;font-weight:800;letter-spacing:-.04em}
+.stat .v small{font-size:13px;color:var(--mute);font-weight:600;margin-left:4px}
+.stat .l{font-size:13px;color:var(--mute);font-weight:600}
+.wline{height:120px;margin-top:14px}
+.wline svg{width:100%;height:100%;overflow:visible}
+.wline path{fill:none;stroke:var(--ink);stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round}
+.wline circle{fill:var(--ink)}
+.wline text{font-size:11px;font-weight:600;fill:var(--mute)}
+.inl{display:flex;gap:10px;margin-top:14px}
+.inl input{flex:1;min-width:0;width:0;height:48px;border-radius:14px;border:1.5px solid var(--line);background:var(--bg);padding:0 14px;font-size:16px;font-weight:700;outline:none}
+.inl input:focus{border-color:var(--ink)}
+.inl button{flex:none;white-space:nowrap;height:48px;padding:0 18px;border-radius:14px;background:var(--ink);color:#fff;font-weight:700;font-size:14px}
+
+/* settings */
+.row{display:flex;justify-content:space-between;align-items:center;padding:14px 0;border-bottom:1px solid var(--line);font-size:16px}
+.row:last-child{border-bottom:0}
+.row label{flex:1;font-weight:500}
+.row .u{color:var(--mute);font-size:13px;margin-left:8px;width:26px}
+.row input,.row select{width:96px;text-align:right;border:0;background:none;font-size:19px;font-weight:700;letter-spacing:-.02em;outline:none}
+.row input.wide{width:170px;font-size:14px;letter-spacing:0}
+.row select{appearance:none;-webkit-appearance:none;direction:rtl;font-size:16px}
+.seg{display:flex;background:var(--bg);border-radius:12px;padding:3px}
+.seg button{padding:8px 16px;font-size:14px;font-weight:600;border-radius:10px;color:var(--mute)}
+.seg button.on{background:var(--card);color:var(--ink);box-shadow:0 1px 3px rgba(0,0,0,.08)}
+.card h5{font-size:13px;font-weight:700;color:var(--mute);letter-spacing:.04em;margin-bottom:4px}
+.hint{font-size:13px;color:var(--mute);line-height:1.55;margin-top:10px}
+.calc .v{font-size:60px;font-weight:800;letter-spacing:-.06em;line-height:.9}
+.calc .v small{font-size:13px;font-weight:600;letter-spacing:.06em;margin-left:6px;color:var(--mute)}
+.pri{margin-top:18px;height:56px;border-radius:16px;background:var(--ink);color:#fff;font-weight:700;font-size:16px;width:100%;transition:transform .15s}
+.pri:active{transform:scale(.985)}
+.sec{height:44px;width:100%;font-size:14px;color:var(--mute);margin-top:6px;font-weight:600}
+
+/* result sheet */
+.sheet{position:fixed;inset:0;z-index:20;background:var(--bg);display:flex;flex-direction:column;overflow:auto;
+  transform:translateY(100%);transition:transform .45s var(--ease);visibility:hidden;padding-bottom:calc(env(safe-area-inset-bottom) + 20px)}
+.sheet.show{transform:none;visibility:visible}
+.sheet .photo{width:100%;aspect-ratio:1/1;object-fit:cover;background:#ddd;display:block}
+.sheet .close{position:absolute;top:calc(env(safe-area-inset-top) + 12px);left:16px;width:38px;height:38px;border-radius:50%;background:rgba(255,255,255,.9);font-size:18px;display:flex;align-items:center;justify-content:center}
+.sheet .body{background:var(--bg);border-radius:26px 26px 0 0;margin-top:-26px;position:relative;padding:22px 18px 0}
+.sheet h2{font-size:26px;font-weight:800;letter-spacing:-.03em;line-height:1.15}
+.sheet .sub{font-size:13px;color:var(--mute);font-weight:600;margin-top:4px}
+.kbig{display:flex;align-items:baseline;gap:6px;margin-top:14px}
+.kbig .v{font-size:44px;font-weight:800;letter-spacing:-.05em;line-height:1}
+.kbig small{font-size:14px;color:var(--mute);font-weight:600}
+.items{list-style:none;margin-top:16px}
+.items li{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:14px 0;border-bottom:1px solid var(--line);font-size:15px}
+.items li:last-child{border-bottom:0}
+.items li span{flex:1;font-weight:600;line-height:1.35}
+.items li b{font-weight:800;font-size:18px;letter-spacing:-.02em}
+.items li em{font-style:normal;color:var(--mute);font-size:12px;width:26px}
+.fail{text-align:center;padding:30px 10px 10px}
+.fail .ic{font-size:44px}
+.fail h3{font-size:20px;font-weight:800;margin-top:14px;letter-spacing:-.02em}
+.fail p{color:var(--mute);font-size:14px;line-height:1.6;margin-top:8px}
+.err{color:#b91c1c;font-size:14px;margin-top:12px;line-height:1.5}
+@media (prefers-reduced-motion:reduce){.ring .fg,.sheet,.bar i{transition:none}}
+</style>
+</head>
+<body>
+<div id="app">
+
+  <!-- HOME -->
+  <div class="page" id="pHome">
+    <div class="top"><div class="brand">HIGHER</div><div class="streak"><i></i><span id="streak">0 天</span></div></div>
+    <div class="week" id="week"></div>
+
+    <div class="card hero">
+      <div class="txt"><div class="v" id="left">0</div><div class="l" id="leftL">还可以吃 kcal</div></div>
+      <div class="ring" id="ringMain"><svg viewBox="0 0 100 100"><circle class="bg" cx="50" cy="50" r="44"/><circle class="fg" cx="50" cy="50" r="44" stroke-dasharray="276.5" stroke-dashoffset="276.5"/></svg><div class="ic">🔥</div></div>
+    </div>
+
+    <div class="macros">
+      <div class="macro"><div><div class="v" id="pV">0g</div><div class="l">蛋白质剩余</div></div><div class="ring" id="ringP"><svg viewBox="0 0 100 100"><circle class="bg" cx="50" cy="50" r="44"/><circle class="fg" cx="50" cy="50" r="44" stroke-dasharray="276.5" stroke-dashoffset="276.5"/></svg><div class="ic">P</div></div></div>
+      <div class="macro"><div><div class="v" id="cV">0g</div><div class="l">碳水剩余</div></div><div class="ring" id="ringC"><svg viewBox="0 0 100 100"><circle class="bg" cx="50" cy="50" r="44"/><circle class="fg" cx="50" cy="50" r="44" stroke-dasharray="276.5" stroke-dashoffset="276.5"/></svg><div class="ic">C</div></div></div>
+      <div class="macro"><div><div class="v" id="fV">0g</div><div class="l">脂肪剩余</div></div><div class="ring" id="ringF"><svg viewBox="0 0 100 100"><circle class="bg" cx="50" cy="50" r="44"/><circle class="fg" cx="50" cy="50" r="44" stroke-dasharray="276.5" stroke-dashoffset="276.5"/></svg><div class="ic">F</div></div></div>
+    </div>
+
+    <h4 id="logTitle">今天的记录</h4>
+    <div id="logs"></div>
+  </div>
+
+  <!-- ANALYTICS -->
+  <div class="page hide" id="pStats">
+    <div class="top"><div class="brand">HIGHER</div></div>
+    <h4 style="margin-top:22px">最近 7 天</h4>
+    <div class="card">
+      <div class="stat"><div><div class="v" id="avg">0<small>kcal / 天</small></div><div class="l">平均摄入</div></div><div style="text-align:right"><div class="v" id="hitDays">0<small>/ 7</small></div><div class="l">达标天数</div></div></div>
+      <div class="bars" id="bars"></div>
+    </div>
+    <h4>体重 · 体脂</h4>
+    <div class="card">
+      <div class="stat"><div><div class="v" id="wNow">—<small>kg</small></div><div class="l">当前体重</div></div><div style="text-align:right"><div class="v" id="bfNow">—<small>%</small></div><div class="l" id="bfL">目标 —%</div></div></div>
+      <div class="wline" id="wline"></div>
+      <div class="inl"><input id="wIn" type="number" inputmode="decimal" placeholder="体重 kg"/><input id="bfIn" type="number" inputmode="decimal" placeholder="体脂 %"/><button id="wAdd">记录</button></div>
+    </div>
+  </div>
+
+  <!-- SETTINGS -->
+  <div class="page hide" id="pSet">
+    <div class="top"><div class="brand">HIGHER</div></div>
+    <h4 style="margin-top:22px">我的目标</h4>
+    <div class="card calc"><div class="v"><span id="calcV">—</span><small>KCAL / 天</small></div><div class="hint" id="calcL"></div></div>
+    <div class="card"><h5>身体</h5>
+      <div class="row"><label>性别</label><div class="seg"><button data-sex="m" class="on">男</button><button data-sex="f">女</button></div></div>
+      <div class="row"><label>年龄</label><input id="age" type="number" inputmode="numeric"/><span class="u">岁</span></div>
+      <div class="row"><label>身高</label><input id="height" type="number" inputmode="decimal"/><span class="u">cm</span></div>
+      <div class="row"><label>体重</label><input id="weight" type="number" inputmode="decimal"/><span class="u">kg</span></div>
+      <div class="row"><label>当前体脂率</label><input id="bf" type="number" inputmode="decimal"/><span class="u">%</span></div>
+      <div class="row"><label>日常活动量</label><select id="act"><option value="1.2">久坐</option><option value="1.375">轻度</option><option value="1.55">中等</option><option value="1.725">高强度</option></select><span class="u"></span></div>
+    </div>
+    <div class="card"><h5>目标</h5>
+      <div class="row"><label>目标体脂率</label><input id="bfGoal" type="number" inputmode="decimal"/><span class="u">%</span></div>
+      <div class="row"><label>计划用时</label><input id="weeks" type="number" inputmode="numeric"/><span class="u">周</span></div>
+    </div>
+    <div class="card"><h5>拍照识别</h5>
+      <div class="row"><label>API 密钥</label><input class="wide" id="apiKey" type="password" placeholder="sk-ant-…" autocomplete="off"/></div>
+      <div class="hint">在 console.anthropic.com 生成密钥并粘贴到这里，拍照识别就能在手机上使用。密钥只保存在本机。</div>
+      <button class="sec" id="testKey" style="border:1.5px solid var(--line);border-radius:14px;margin-top:12px;color:var(--ink)">测试识别连接</button>
+      <div class="hint" id="testOut" style="text-align:center;margin-top:8px"></div>
+    </div>
+    <button class="pri" id="saveGoal">保存目标</button>
+    <button class="sec" id="resetDay">清空今天的记录</button>
+  </div>
+
+  <button class="fab" id="shoot">+</button>
+  <input type="file" id="file" accept="image/*" capture="environment"/>
+
+  <nav class="tabs">
+    <button class="on" data-p="pHome"><svg viewBox="0 0 24 24"><path d="M3 11l9-8 9 8v9a2 2 0 0 1-2 2h-4v-7H9v7H5a2 2 0 0 1-2-2z"/></svg>首页</button>
+    <button data-p="pStats"><svg viewBox="0 0 24 24"><path d="M4 20V10M10 20V4M16 20v-6M22 20H2"/></svg>数据</button>
+  </nav>
+  <button id="openSet" style="position:fixed;right:18px;top:calc(env(safe-area-inset-top) + 14px);z-index:3;width:36px;height:36px;border-radius:50%;background:var(--card);display:flex;align-items:center;justify-content:center;box-shadow:0 1px 2px rgba(0,0,0,.05)"><svg viewBox="0 0 24 24" style="width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg></button>
+</div>
+
+<!-- RESULT -->
+<section class="sheet" id="result">
+  <img class="photo" id="thumb" alt=""/>
+  <button class="close" id="cancelRes">✕</button>
+  <div class="body">
+    <h2 id="resTitle">这一餐</h2>
+    <div class="sub" id="resSub"></div>
+    <div id="okBlock">
+      <div class="kbig"><span class="v" id="resTot">0</span><small>kcal</small></div>
+      <div class="macros" style="margin-top:14px">
+        <div class="macro" style="padding:12px 14px"><div><div class="v" id="rP">0g</div><div class="l">蛋白质</div></div></div>
+        <div class="macro" style="padding:12px 14px"><div><div class="v" id="rC">0g</div><div class="l">碳水</div></div></div>
+        <div class="macro" style="padding:12px 14px"><div><div class="v" id="rF">0g</div><div class="l">脂肪</div></div></div>
+      </div>
+      <div class="card" style="padding:4px 18px"><ul class="items" id="items"></ul></div>
+      <button class="pri" id="confirmRes">记入今天</button>
+      <button class="sec" id="fixRes">重新拍一张</button>
+    </div>
+    <div id="failBlock" class="hide">
+      <div class="fail"><div class="ic">🍽️</div><h3 id="failT">未识别到食物</h3><p id="failP">请对准食物，光线充足，重新拍一张。</p></div>
+      <button class="pri" id="retake">重新拍照</button>
+      <button class="sec" id="failClose">关闭</button>
+    </div>
+  </div>
+</section>
+
+<script>
+/* ---------- state ---------- */
+const MEALS={breakfast:"早餐",lunch:"中餐",dinner:"晚餐",snack:"加餐"};
+let profile={sex:"m",age:25,height:175,weight:75,bf:22,bfGoal:15,weeks:12,act:1.375,target:0,apiKey:""};
+let log={};      // {date:[{id,meal,time,label,kcal,p,c,f,items,img}]}
+let body=[];     // [{date,weight,bf}]
+let pending=null, selDate=null;
+const $=s=>document.querySelector(s);
+const key=d=>d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");
+const todayKey=()=>key(new Date());
+const mem={};
+const store={
+  async get(k){try{if(window.storage){const r=await window.storage.get(k,false);return r?JSON.parse(r.value):null}}catch(e){}
+    try{const v=localStorage.getItem(k);if(v!=null)return JSON.parse(v)}catch(e){}return mem[k]??null},
+  async set(k,v){mem[k]=v;try{if(window.storage){await window.storage.set(k,JSON.stringify(v),false);return}}catch(e){}
+    try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}
+};
+
+/* ---------- targets ---------- */
+function computeTarget(p){
+  const lbm=p.weight*(1-p.bf/100), bmr=370+21.6*lbm, tdee=bmr*p.act;
+  const targetW=lbm/(1-p.bfGoal/100), fatToLose=Math.max(0,p.weight-targetW);
+  let deficit=fatToLose*7700/Math.max(7,p.weeks*7);
+  const capped=deficit>tdee*.25; if(capped)deficit=tdee*.25;
+  const floor=p.sex==="m"?1500:1200;
+  let target=Math.round(tdee-deficit); const floored=target<floor; if(floored)target=floor;
+  return {target,tdee:Math.round(tdee),fatToLose:+fatToLose.toFixed(1),capped,floored,
+    weeksNeeded:Math.ceil(fatToLose*7700/Math.max(1,tdee-target)/7),
+    p:Math.round(lbm*2.2), f:Math.round(target*.25/9), c:Math.max(0,Math.round((target-lbm*2.2*4-target*.25)/4))};
+}
+const macroT=()=>profile.target?computeTarget(profile):{target:0,p:0,c:0,f:0};
+
+/* ---------- ring ---------- */
+function setRing(id,pct,hit){const el=$("#"+id);const c=276.5;
+  el.querySelector(".fg").style.strokeDashoffset=c*(1-Math.min(1,Math.max(0,pct)));el.classList.toggle("hit",!!hit)}
+
+/* ---------- home ---------- */
+function dayTotals(k){return (log[k]||[]).reduce((a,e)=>({kcal:a.kcal+e.kcal,p:a.p+(e.p||0),c:a.c+(e.c||0),f:a.f+(e.f||0)}),{kcal:0,p:0,c:0,f:0})}
+const isHit=(kcal,t)=>t&&kcal>=t*.9&&kcal<=t*1.1;
+function renderWeek(){
+  const t=profile.target, now=new Date(), dow=(now.getDay()+6)%7; // monday start
+  let h="";
+  for(let i=0;i<7;i++){const d=new Date(now);d.setDate(now.getDate()-dow+i);const k=key(d);const tot=dayTotals(k).kcal;
+    const cls=isHit(tot,t)?"full":tot>0?"done":"";
+    h+=`<button data-k="${k}" class="${k===selDate?"sel":""}"><span class="d">${"一二三四五六日"[i]}</span><span class="n ${cls}">${d.getDate()}</span></button>`}
+  $("#week").innerHTML=h;
+  $("#week").querySelectorAll("button").forEach(b=>b.onclick=()=>{selDate=b.dataset.k;renderHome()});
+}
+function renderHome(){
+  const T=macroT(), tot=dayTotals(selDate), t=T.target;
+  renderWeek();
+  const left=t-tot.kcal;
+  $("#left").textContent=Math.abs(left);
+  $("#leftL").textContent=!t?"请先设置目标":left>=0?"还可以吃 kcal":"已超出 kcal";
+  setRing("ringMain",t?tot.kcal/t:0,isHit(tot.kcal,t));
+  $("#pV").textContent=Math.max(0,T.p-tot.p)+"g";$("#cV").textContent=Math.max(0,T.c-tot.c)+"g";$("#fV").textContent=Math.max(0,T.f-tot.f)+"g";
+  setRing("ringP",T.p?tot.p/T.p:0);setRing("ringC",T.c?tot.c/T.c:0);setRing("ringF",T.f?tot.f/T.f:0);
+  const isToday=selDate===todayKey();
+  $("#logTitle").textContent=isToday?"今天的记录":selDate.slice(5).replace("-","月")+"日的记录";
+  const entries=[...(log[selDate]||[])].reverse();
+  $("#logs").innerHTML=entries.length?entries.map(e=>`<div class="log">${e.img?`<img src="${e.img}" alt="">`:`<div class="ph">🍽️</div>`}
+    <div class="b"><div class="t"><span>${e.label}</span><small>${MEALS[e.meal]} · ${e.time}</small></div>
+    <div class="k">${e.kcal}<small>kcal</small></div>
+    <div class="m"><span>蛋白 <b>${e.p||0}g</b></span><span>碳水 <b>${e.c||0}g</b></span><span>脂肪 <b>${e.f||0}g</b></span></div></div></div>`).join("")
+    :`<div class="empty">${isToday?"还没有记录。点下方 + 拍一张照片，自动识别热量并记入。":"这一天没有记录"}</div>`;
+  // streak
+  let s=0;const d=new Date();if(!isHit(dayTotals(todayKey()).kcal,t))d.setDate(d.getDate()-1);
+  while(isHit(dayTotals(key(d)).kcal,t)){s++;d.setDate(d.getDate()-1)}
+  $("#streak").textContent=s+" 天";
+}
+
+/* ---------- stats ---------- */
+function renderStats(){
+  const t=profile.target, now=new Date(); let sum=0,n=0,hit=0,bars="";
+  const max=Math.max(t*1.2,...[...Array(7)].map((_,i)=>{const d=new Date(now);d.setDate(now.getDate()-6+i);return dayTotals(key(d)).kcal}),1);
+  for(let i=6;i>=0;i--){const d=new Date(now);d.setDate(now.getDate()-i);const v=dayTotals(key(d)).kcal;if(v>0){sum+=v;n++}if(isHit(v,t))hit++;
+    bars+=`<div class="bar"><i class="${isHit(v,t)?"hit":v?"":"none"}" style="height:${v?Math.max(4,v/max*100):4}%"></i><span>${i===0?"今":d.getDate()}</span></div>`}
+  $("#bars").innerHTML=(t?`<div class="goal" style="bottom:${t/max*100}%"><span>目标 ${t}</span></div>`:"")+bars;
+  $("#avg").innerHTML=(n?Math.round(sum/n):0)+"<small>kcal / 天</small>";$("#hitDays").innerHTML=hit+"<small>/ 7</small>";
+  const last=body[body.length-1];
+  $("#wNow").innerHTML=(last?last.weight:profile.weight)+"<small>kg</small>";$("#bfNow").innerHTML=(last?last.bf:profile.bf)+"<small>%</small>";$("#bfL").textContent=`目标 ${profile.bfGoal}%`;
+  const pts=body.slice(-10);
+  if(pts.length<2){$("#wline").innerHTML=`<div class="empty" style="padding:30px 0">记录两次以上体重后，这里会显示变化曲线</div>`;return}
+  const W=320,H=100,vals=pts.map(p=>p.weight),mn=Math.min(...vals)-.5,mx=Math.max(...vals)+.5;
+  const X=i=>i/(pts.length-1)*W, Y=v=>H-(v-mn)/(mx-mn)*H;
+  const path=pts.map((p,i)=>(i?"L":"M")+X(i).toFixed(1)+" "+Y(p.weight).toFixed(1)).join(" ");
+  $("#wline").innerHTML=`<svg viewBox="-10 -10 ${W+20} ${H+30}"><path d="${path}"/>${pts.map((p,i)=>`<circle cx="${X(i)}" cy="${Y(p.weight)}" r="3.5"/><text x="${X(i)}" y="${H+22}" text-anchor="middle">${p.date.slice(5).replace("-","/")}</text>`).join("")}</svg>`;
+}
+$("#wAdd").onclick=async()=>{const w=+$("#wIn").value,bf=+$("#bfIn").value;if(!w)return;
+  body=body.filter(b=>b.date!==todayKey());body.push({date:todayKey(),weight:w,bf:bf||profile.bf});body.sort((a,b)=>a.date<b.date?-1:1);
+  profile.weight=w;if(bf)profile.bf=bf;profile.target=computeTarget(profile).target;
+  await store.set("higher:body",body);await store.set("higher:profile",profile);$("#wIn").value="";$("#bfIn").value="";renderStats()};
+
+/* ---------- settings ---------- */
+function readForm(){profile.age=+$("#age").value||25;profile.height=+$("#height").value||175;profile.weight=+$("#weight").value||70;
+  profile.bf=+$("#bf").value||20;profile.bfGoal=+$("#bfGoal").value||15;profile.weeks=+$("#weeks").value||12;profile.act=+$("#act").value;profile.apiKey=$("#apiKey").value.trim()}
+function fillForm(){$("#apiKey").value=profile.apiKey||"";$("#age").value=profile.age;$("#height").value=profile.height;$("#weight").value=profile.weight;
+  $("#bf").value=profile.bf;$("#bfGoal").value=profile.bfGoal;$("#weeks").value=profile.weeks;$("#act").value=profile.act;
+  document.querySelectorAll("[data-sex]").forEach(b=>b.classList.toggle("on",b.dataset.sex===profile.sex))}
+function renderCalc(){const r=computeTarget(profile);$("#calcV").textContent=r.target;
+  let l=`日常消耗约 ${r.tdee} kcal，需减去 ${r.fatToLose} kg 脂肪。蛋白质 ${r.p}g · 碳水 ${r.c}g · 脂肪 ${r.f}g。`;
+  if(r.capped)l+=` 每日缺口已限制在消耗的 25% 以内，按此速度约需 ${r.weeksNeeded} 周。`;if(r.floored)l+=" 已按最低安全摄入设定。";
+  $("#calcL").textContent=l+" 数值为估算，供参考。";return r.target}
+$("#pSet").addEventListener("input",()=>{readForm();renderCalc()});
+document.querySelectorAll("[data-sex]").forEach(b=>b.onclick=()=>{profile.sex=b.dataset.sex;fillForm();renderCalc()});
+$("#saveGoal").onclick=async()=>{readForm();profile.target=renderCalc();await store.set("higher:profile",profile);go("pHome")};
+$("#resetDay").onclick=async()=>{if(!confirm("清空今天的记录？"))return;delete log[todayKey()];await store.set("higher:log",log);go("pHome")};
+
+/* ---------- nav ---------- */
+function go(p){document.querySelectorAll(".page").forEach(x=>x.classList.toggle("hide",x.id!==p));
+  document.querySelectorAll(".tabs button").forEach(b=>b.classList.toggle("on",b.dataset.p===p));
+  $("#openSet").style.display=p==="pSet"?"none":"flex";
+  if(p==="pHome"){selDate=todayKey();renderHome()}if(p==="pStats")renderStats();if(p==="pSet"){fillForm();renderCalc()}
+  document.getElementById(p).scrollTop=0}
+document.querySelectorAll(".tabs button").forEach(b=>b.onclick=()=>go(b.dataset.p));
+$("#openSet").onclick=()=>go("pSet");
+
+/* ---------- Claude API ---------- */
+class ApiError extends Error{constructor(kind,msg){super(msg);this.kind=kind}}
+const inArtifact=()=>!!window.storage;
+async function callClaude(body){
+  const headers={"Content-Type":"application/json"};
+  if(profile.apiKey){headers["x-api-key"]=profile.apiKey;headers["anthropic-version"]="2023-06-01";headers["anthropic-dangerous-direct-browser-access"]="true"}
+  else if(!inArtifact())throw new ApiError("nokey","还没有填 API 密钥");
+  let res;
+  for(let attempt=0;attempt<3;attempt++){
+    try{res=await fetch("https://api.anthropic.com/v1/messages",{method:"POST",headers,body:JSON.stringify(body)})}
+    catch(e){if(attempt<2){await new Promise(r=>setTimeout(r,800*(attempt+1)));continue}
+      throw new ApiError("network",profile.apiKey?"无法连接识别服务":"还没有填 API 密钥")}
+    if(res.status===401||res.status===403)throw new ApiError("nokey","API 密钥无效或已过期");
+    if(res.status===429||res.status>=500){if(attempt<2){await new Promise(r=>setTimeout(r,1200*(attempt+1)));continue}
+      throw new ApiError("busy","识别服务繁忙")}
+    break}
+  const j=await res.json();
+  if(j.error)throw new ApiError(j.error.type==="authentication_error"?"nokey":"server",j.error.message||"服务返回错误");
+  return (j.content||[]).filter(c=>c.type==="text").map(c=>c.text).join("");
+}
+function extractJSON(txt){const s=txt.indexOf("{"),e=txt.lastIndexOf("}");if(s<0||e<0)throw new ApiError("parse","识别结果无法解析");return JSON.parse(txt.slice(s,e+1))}
+const FAIL_TEXT={
+  nokey:["还没有填 API 密钥","请到右上角设置里粘贴 API 密钥，保存后再拍。"],
+  network:["无法连接识别服务","请确认手机已联网，并在 Safari 中打开本页（不要在预览窗口里使用）。"],
+  busy:["识别服务繁忙","请等几秒钟再拍一次。"],
+  server:["识别服务返回错误",""],
+  parse:["识别结果异常","请重新拍一张。"],
+  image:["照片读取失败","请重新拍照，或换一张 JPG 格式的照片。"]};
+const RECOGNIZE_SYSTEM=["你是专业营养师，精通中餐（家常菜、粤菜、川菜、面点、火锅、烧烤、奶茶等）、西餐（汉堡、披萨、意面、沙拉、牛排、甜点）、日韩、东南亚、快餐和包装食品的营养数据。",
+  "任务：仔细看照片，逐项识别每一种食物或饮品，根据餐具大小、堆叠高度、可见分量估算克数或份量，考虑烹饪方式（油炸、红烧、清蒸等对热量影响很大），给出每项的热量和三大宏量营养素。多种食物要分开列。",
+  "只返回JSON，不要任何其他文字或markdown：",
+  "{\"label\":\"这一餐的名字，不超过8个字\",\"items\":[{\"name\":\"食物名+份量，例如：宫保鸡丁 约200g\",\"kcal\":整数,\"p\":蛋白质克数整数,\"c\":碳水克数整数,\"f\":脂肪克数整数}]}",
+  "如果照片里没有食物，返回{\"label\":\"未识别到食物\",\"items\":[]}。"].join("\n");
+
+$("#testKey").onclick=async()=>{readForm();const o=$("#testOut");o.textContent="连接中…";o.style.color="";
+  try{const t=await callClaude({model:"claude-sonnet-4-6",max_tokens:20,messages:[{role:"user",content:"回复：OK"}]});
+    o.textContent="✓ 识别服务连接正常"+(t?"":"");o.style.color="var(--green)";
+    profile.target=profile.target||computeTarget(profile).target;await store.set("higher:profile",profile)}
+  catch(e){const k=e.kind||"server";o.textContent="✕ "+FAIL_TEXT[k][0]+(e.kind==="server"?"："+e.message:"");o.style.color="#b91c1c"}};
+
+/* ---------- photo → calories ---------- */
+const mealNow=()=>{const h=new Date().getHours()+new Date().getMinutes()/60;return h<10.5?"breakfast":h<14.5?"lunch":h<17?"snack":h<21?"dinner":"snack"};
+$("#shoot").onclick=()=>$("#file").click();$("#fixRes").onclick=()=>{$("#result").classList.remove("show");$("#file").click()};
+$("#file").onchange=async e=>{
+  const f=e.target.files[0];if(!f)return;e.target.value="";
+  const b=$("#shoot");b.disabled=true;b.classList.add("busy");
+  let thumb="";
+  try{
+    const img=await shrink(f).catch(()=>{throw new ApiError("image","照片读取失败")});thumb=img.thumb;
+    const txt=await callClaude({model:"claude-sonnet-4-6",max_tokens:1400,system:RECOGNIZE_SYSTEM,
+      messages:[{role:"user",content:[{type:"image",source:{type:"base64",media_type:img.type,data:img.data}},{type:"text",text:"识别并估算这张照片里所有食物的热量和营养。"}]}]});
+    const parsed=extractJSON(txt);
+    const items=(parsed.items||[]).filter(i=>i&&i.name&&+i.kcal>0).map(i=>({name:String(i.name),kcal:Math.round(+i.kcal),p:Math.round(+i.p||0),c:Math.round(+i.c||0),f:Math.round(+i.f||0)}));
+    if(!items.length){showFail(thumb,"未识别到食物","照片里没有看到可识别的食物。请对准食物、光线充足，重新拍一张。");return}
+    pending={meal:mealNow(),items,label:parsed.label||"",img:thumb};showResult();
+  }catch(err){
+    const k=err.kind||"server";let [t,p]=FAIL_TEXT[k];if(k==="nokey"&&profile.apiKey){t=err.message;p="请检查设置里的密钥是否完整，或到 console.anthropic.com 重新生成。"}
+    showFail(k==="image"?"":thumb,t,p||("原因："+err.message));
+  }
+  finally{b.disabled=false;b.classList.remove("busy")}
+};
+function showFail(img,t,p){$("#thumb").src=img;$("#thumb").style.display=img?"block":"none";
+  $("#resTitle").textContent="";$("#resSub").textContent="";$("#failT").textContent=t;$("#failP").textContent=p;
+  $("#okBlock").classList.add("hide");$("#failBlock").classList.remove("hide");$("#result").classList.add("show")}
+$("#retake").onclick=()=>{$("#result").classList.remove("show");$("#file").click()};
+$("#failClose").onclick=()=>$("#result").classList.remove("show");
+function shrink(file){return new Promise((ok,no)=>{const img=new Image(),url=URL.createObjectURL(file);
+  img.onload=()=>{const draw=(max,q)=>{const s=Math.min(1,max/Math.max(img.width,img.height));const c=document.createElement("canvas");
+      c.width=img.width*s;c.height=img.height*s;c.getContext("2d").drawImage(img,0,0,c.width,c.height);return c.toDataURL("image/jpeg",q)};
+    const big=draw(1024,.82),thumb=draw(240,.7);URL.revokeObjectURL(url);ok({data:big.split(",")[1],type:"image/jpeg",thumb})};
+  img.onerror=()=>no(new Error("图片读取失败"));img.src=url})}
+const sum=(k)=>pending.items.reduce((a,i)=>a+(+i[k]||0),0);
+function showResult(){
+  $("#resTitle").textContent=pending.label||"这一餐";$("#resSub").textContent=`${MEALS[pending.meal]} · ${new Date().toLocaleTimeString("zh-CN",{hour:"2-digit",minute:"2-digit"})}`;
+  $("#thumb").src=pending.img;$("#thumb").style.display="block";
+  $("#items").innerHTML=pending.items.map(it=>`<li><span>${it.name}</span><b>${Math.round(it.kcal)}</b><em>kcal</em></li>`).join("");
+  $("#okBlock").classList.remove("hide");$("#failBlock").classList.add("hide");
+  sumRes();$("#result").classList.add("show")}
+function sumRes(){$("#resTot").textContent=sum("kcal");$("#rP").textContent=sum("p")+"g";$("#rC").textContent=sum("c")+"g";$("#rF").textContent=sum("f")+"g"}
+$("#cancelRes").onclick=()=>$("#result").classList.remove("show");
+$("#confirmRes").onclick=async()=>{const k=todayKey();log[k]=log[k]||[];
+  log[k].push({id:Date.now(),meal:pending.meal,time:new Date().toLocaleTimeString("zh-CN",{hour:"2-digit",minute:"2-digit"}),
+    label:pending.label||pending.items.map(i=>i.name.split(" ")[0]).join("、"),kcal:sum("kcal"),p:sum("p"),c:sum("c"),f:sum("f"),items:pending.items,img:pending.img});
+  // keep storage small: drop images older than 14 days
+  const cutoff=new Date();cutoff.setDate(cutoff.getDate()-14);for(const d in log)if(d<key(cutoff))log[d].forEach(e=>delete e.img);
+  await store.set("higher:log",log);$("#result").classList.remove("show");go("pHome")};
+
+/* ---------- boot ---------- */
+(async()=>{const p=await store.get("higher:profile");if(p)profile={...profile,...p};
+  const l=await store.get("higher:log");if(l)log=l;const b=await store.get("higher:body");if(b)body=b;
+  go(profile.target?"pHome":"pSet")})();
+</script>
+</body>
+</html>
