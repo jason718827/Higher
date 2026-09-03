@@ -7,6 +7,8 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default" />
 <meta name="apple-mobile-web-app-title" content="HIGHER" />
 <meta name="theme-color" content="#f5f5f5" />
+<link rel="apple-touch-icon" href="icon.png" />
+<link rel="icon" type="image/png" href="icon.png" />
 <title>HIGHER</title>
 <style>
 :root{--bg:#f4f4f5;--card:#fff;--ink:#0a0a0a;--mute:#8e8e93;--line:#ececee;--ring:#e8e8ea;--green:#22c55e;
@@ -112,6 +114,29 @@ input[type=file]{display:none}
 .inl input:focus{border-color:var(--ink)}
 .inl button{flex:none;white-space:nowrap;height:48px;padding:0 18px;border-radius:14px;background:var(--ink);color:#fff;font-weight:700;font-size:14px}
 
+/* projection */
+.pline{height:170px;margin-top:16px}
+.pline svg{width:100%;height:100%;overflow:visible}
+.pline .exp{fill:none;stroke:var(--ink);stroke-width:1.5;stroke-dasharray:4 5;opacity:.55}
+.pline .act{fill:none;stroke:var(--ink);stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round}
+.pline .act.good{stroke:var(--green)}
+.pline circle{fill:var(--ink)}.pline circle.good{fill:var(--green)}
+.pline .today{stroke:var(--ink);stroke-width:1;opacity:.25}
+.pline .goal{stroke:var(--green);stroke-width:1;opacity:.6}
+.pline text{font-size:10px;font-weight:600;fill:var(--mute)}
+.pline text.ink{fill:var(--ink);font-weight:800}
+.legend{display:flex;gap:16px;align-items:center;margin-top:10px;font-size:12px;color:var(--mute);font-weight:600}
+.legend i{display:inline-block;width:16px;height:0;border-top:2px solid var(--ink);vertical-align:middle;margin-right:6px}
+.legend i.dash{border-top-style:dashed;opacity:.6}
+.legend #paceTxt{margin-left:auto;color:var(--ink);font-weight:700}
+.miles{list-style:none;margin-top:14px;border-top:1.5px solid var(--ink)}
+.miles li{display:grid;grid-template-columns:1.2fr 1fr 1fr;padding:11px 0;border-bottom:1px solid var(--line);font-size:14px;align-items:baseline}
+.miles li:last-child{border-bottom:0}
+.miles li span:first-child{font-weight:600}
+.miles li b{font-weight:800;font-size:16px;letter-spacing:-.02em;text-align:right}
+.miles li b small{font-size:11px;color:var(--mute);font-weight:600;margin-left:2px}
+.miles li.goal{color:var(--green)}.miles li.goal b small{color:inherit}
+.miles li.now span:first-child::after{content:"";display:inline-block;width:5px;height:5px;border-radius:50%;background:currentColor;margin-left:6px;vertical-align:middle}
 /* settings */
 .row{display:flex;justify-content:space-between;align-items:center;padding:14px 0;border-bottom:1px solid var(--line);font-size:16px}
 .row:last-child{border-bottom:0}
@@ -188,11 +213,13 @@ input[type=file]{display:none}
       <div class="stat"><div><div class="v" id="avg">0<small>kcal / 天</small></div><div class="l">平均摄入</div></div><div style="text-align:right"><div class="v" id="hitDays">0<small>/ 7</small></div><div class="l">达标天数</div></div></div>
       <div class="bars" id="bars"></div>
     </div>
-    <h4>体重 · 体脂</h4>
-    <div class="card">
-      <div class="stat"><div><div class="v" id="wNow">—<small>kg</small></div><div class="l">当前体重</div></div><div style="text-align:right"><div class="v" id="bfNow">—<small>%</small></div><div class="l" id="bfL">目标 —%</div></div></div>
-      <div class="wline" id="wline"></div>
-      <div class="inl"><input id="wIn" type="number" inputmode="decimal" placeholder="体重 kg"/><input id="bfIn" type="number" inputmode="decimal" placeholder="体脂 %"/><button id="wAdd">记录</button></div>
+    <h4>变化预期</h4>
+    <div class="card" id="projCard">
+      <div class="stat"><div><div class="v" id="projDate">—</div><div class="l" id="projDateL">预计达成</div></div><div style="text-align:right"><div class="v" id="projRate">—</div><div class="l">每周体重</div></div></div>
+      <div class="pline" id="pline"></div>
+      <div class="legend"><span><i class="dash"></i>预期</span><span><i class="solid"></i>实际</span><span id="paceTxt"></span></div>
+      <ul class="miles" id="miles"></ul>
+      <div class="inl"><input id="wIn" type="number" inputmode="decimal" placeholder="今日体重 kg"/><input id="bfIn" type="number" inputmode="decimal" placeholder="体脂 %"/><button id="wAdd">记录</button></div>
     </div>
   </div>
 
@@ -203,15 +230,15 @@ input[type=file]{display:none}
     <div class="card calc"><div class="v"><span id="calcV">—</span><small>KCAL / 天</small></div><div class="hint" id="calcL"></div></div>
     <div class="card"><h5>身体</h5>
       <div class="row"><label>性别</label><div class="seg"><button data-sex="m" class="on">男</button><button data-sex="f">女</button></div></div>
-      <div class="row"><label>年龄</label><input id="age" type="number" inputmode="numeric"/><span class="u">岁</span></div>
-      <div class="row"><label>身高</label><input id="height" type="number" inputmode="decimal"/><span class="u">cm</span></div>
-      <div class="row"><label>体重</label><input id="weight" type="number" inputmode="decimal"/><span class="u">kg</span></div>
-      <div class="row"><label>当前体脂率</label><input id="bf" type="number" inputmode="decimal"/><span class="u">%</span></div>
+      <div class="row"><label>年龄</label><input id="age" type="number" inputmode="numeric" min="10" max="100"/><span class="u">岁</span></div>
+      <div class="row"><label>身高</label><input id="height" type="number" inputmode="decimal" min="100" max="250"/><span class="u">cm</span></div>
+      <div class="row"><label>体重</label><input id="weight" type="number" inputmode="decimal" min="30" max="300" step="0.1"/><span class="u">kg</span></div>
+      <div class="row"><label>当前体脂率</label><input id="bf" type="number" inputmode="decimal" min="3" max="60" step="0.1"/><span class="u">%</span></div>
       <div class="row"><label>日常活动量</label><select id="act"><option value="1.2">久坐</option><option value="1.375">轻度</option><option value="1.55">中等</option><option value="1.725">高强度</option></select><span class="u"></span></div>
     </div>
     <div class="card"><h5>目标</h5>
-      <div class="row"><label>目标体脂率</label><input id="bfGoal" type="number" inputmode="decimal"/><span class="u">%</span></div>
-      <div class="row"><label>计划用时</label><input id="weeks" type="number" inputmode="numeric"/><span class="u">周</span></div>
+      <div class="row"><label>目标体脂率</label><input id="bfGoal" type="number" inputmode="decimal" min="3" max="60" step="0.1"/><span class="u">%</span></div>
+      <div class="row"><label>计划用时</label><input id="weeks" type="number" inputmode="numeric" min="1" max="104"/><span class="u">周</span></div>
     </div>
     <div class="card"><h5>拍照识别</h5>
       <div class="row"><label>识别服务</label><div class="seg"><button data-prov="gemini">Gemini · 免费</button><button data-prov="claude">Claude</button></div></div>
@@ -224,7 +251,7 @@ input[type=file]{display:none}
     <button class="sec" id="resetDay">清空今天的记录</button>
   </div>
 
-  <button class="fab" id="shoot">+</button>
+  <button class="fab" id="shoot">+</button><div id="busyTip" class="hide" style="position:fixed;left:50%;transform:translateX(-50%);bottom:calc(env(safe-area-inset-bottom) + 130px);z-index:5;background:var(--ink);color:#fff;font-size:13px;font-weight:600;padding:8px 14px;border-radius:999px">识别中，通常需要 5–15 秒</div>
   <input type="file" id="file" accept="image/*" capture="environment"/>
 
   <nav class="tabs">
@@ -249,6 +276,7 @@ input[type=file]{display:none}
         <div class="macro" style="padding:12px 14px"><div><div class="v" id="rF">0g</div><div class="l">脂肪</div></div></div>
       </div>
       <div class="card" style="padding:4px 18px"><ul class="items" id="items"></ul></div>
+      <div class="hint" id="resNote" style="text-align:center"></div>
       <button class="pri" id="confirmRes">记入今天</button>
       <button class="sec" id="fixRes">重新拍一张</button>
     </div>
@@ -279,16 +307,24 @@ const store={
 };
 
 /* ---------- targets ---------- */
+const SAFE_BF={m:5,f:12};
 function computeTarget(p){
-  const lbm=p.weight*(1-p.bf/100), bmr=370+21.6*lbm, tdee=bmr*p.act;
-  const targetW=lbm/(1-p.bfGoal/100), fatToLose=Math.max(0,p.weight-targetW);
-  let deficit=fatToLose*7700/Math.max(7,p.weeks*7);
-  const capped=deficit>tdee*.25; if(capped)deficit=tdee*.25;
-  const floor=p.sex==="m"?1500:1200;
+  const sex=p.sex==="f"?"f":"m";
+  const weight=Math.min(300,Math.max(30,+p.weight||70)), bf=Math.min(60,Math.max(3,+p.bf||20));
+  let bfGoal=Math.min(60,Math.max(1,+p.bfGoal||15)); const act=+p.act||1.375, weeks=Math.max(1,+p.weeks||12);
+  const unsafeGoal=bfGoal<SAFE_BF[sex]; if(unsafeGoal)bfGoal=SAFE_BF[sex];
+  const goalNotLower=bfGoal>=bf;
+  const lbm=weight*(1-bf/100), bmr=370+21.6*lbm, tdee=bmr*act;      // Katch-McArdle, uses lean mass
+  const targetW=lbm/(1-bfGoal/100), fatToLose=Math.max(0,weight-targetW); // keep lean mass constant
+  let deficit=fatToLose*7700/(weeks*7);                              // 7700 kcal per kg body fat
+  const capped=deficit>tdee*.25; if(capped)deficit=tdee*.25;         // never below 75% of expenditure
+  const floor=sex==="m"?1500:1200;
   let target=Math.round(tdee-deficit); const floored=target<floor; if(floored)target=floor;
-  return {target,tdee:Math.round(tdee),fatToLose:+fatToLose.toFixed(1),capped,floored,
-    weeksNeeded:Math.ceil(fatToLose*7700/Math.max(1,tdee-target)/7),
-    p:Math.round(lbm*2.2), f:Math.round(target*.25/9), c:Math.max(0,Math.round((target-lbm*2.2*4-target*.25)/4))};
+  const dailyDef=Math.max(0,tdee-target);
+  const prot=Math.round(lbm*2.2), fat=Math.round(target*.25/9), carb=Math.max(0,Math.round((target-prot*4-fat*9)/4));
+  return {target,tdee:Math.round(tdee),bmr:Math.round(bmr),lbm:+lbm.toFixed(1),targetW:+targetW.toFixed(1),fatToLose:+fatToLose.toFixed(1),
+    capped,floored,unsafeGoal,goalNotLower,bfGoalUsed:bfGoal,
+    weeksNeeded:dailyDef>0?Math.ceil(fatToLose*7700/dailyDef/7):0,p:prot,f:fat,c:carb};
 }
 const macroT=()=>profile.target?computeTarget(profile):{target:0,p:0,c:0,f:0};
 
@@ -331,6 +367,18 @@ function renderHome(){
   $("#streak").textContent=s+" 天";
 }
 
+/* ---------- projection: linear under Katch-McArdle (lean mass constant => expenditure constant) ---------- */
+const DAY=86400000, fmtD=d=>`${d.getMonth()+1}月${d.getDate()}日`, pd=k=>new Date(k+"T12:00:00");
+function projection(){
+  const st=profile.start; if(!st||!profile.target)return null;
+  const r=computeTarget({...profile,weight:st.weight,bf:st.bf});
+  const dailyDef=r.tdee-r.target, lbm=st.weight*(1-st.bf/100);
+  if(r.goalNotLower||dailyDef<=0||r.fatToLose<=0)return {flat:true,start:st,r};
+  const perWeek=dailyDef*7/7700, weeks=r.weeksNeeded, start=pd(st.date);
+  const at=days=>{const w=Math.max(r.targetW,st.weight-perWeek*days/7);return {w:+w.toFixed(1),bf:+((1-lbm/w)*100).toFixed(1)}};
+  const end=new Date(start.getTime()+weeks*7*DAY);
+  return {start:st,r,perWeek:+perWeek.toFixed(2),weeks,end,at,startDate:start,dailyDef:Math.round(dailyDef)};
+}
 /* ---------- stats ---------- */
 function renderStats(){
   const t=profile.target, now=new Date(); let sum=0,n=0,hit=0,bars="";
@@ -339,16 +387,48 @@ function renderStats(){
     bars+=`<div class="bar"><i class="${isHit(v,t)?"hit":v?"":"none"}" style="height:${v?Math.max(4,v/max*100):4}%"></i><span>${i===0?"今":d.getDate()}</span></div>`}
   $("#bars").innerHTML=(t?`<div class="goal" style="bottom:${t/max*100}%"><span>目标 ${t}</span></div>`:"")+bars;
   $("#avg").innerHTML=(n?Math.round(sum/n):0)+"<small>kcal / 天</small>";$("#hitDays").innerHTML=hit+"<small>/ 7</small>";
-  const last=body[body.length-1];
-  $("#wNow").innerHTML=(last?last.weight:profile.weight)+"<small>kg</small>";$("#bfNow").innerHTML=(last?last.bf:profile.bf)+"<small>%</small>";$("#bfL").textContent=`目标 ${profile.bfGoal}%`;
-  const pts=body.slice(-10);
-  if(pts.length<2){$("#wline").innerHTML=`<div class="empty" style="padding:30px 0">记录两次以上体重后，这里会显示变化曲线</div>`;return}
-  const W=320,H=100,vals=pts.map(p=>p.weight),mn=Math.min(...vals)-.5,mx=Math.max(...vals)+.5;
-  const X=i=>i/(pts.length-1)*W, Y=v=>H-(v-mn)/(mx-mn)*H;
-  const path=pts.map((p,i)=>(i?"L":"M")+X(i).toFixed(1)+" "+Y(p.weight).toFixed(1)).join(" ");
-  $("#wline").innerHTML=`<svg viewBox="-10 -10 ${W+20} ${H+30}"><path d="${path}"/>${pts.map((p,i)=>`<circle cx="${X(i)}" cy="${Y(p.weight)}" r="3.5"/><text x="${X(i)}" y="${H+22}" text-anchor="middle">${p.date.slice(5).replace("-","/")}</text>`).join("")}</svg>`;
+  renderProjection();
 }
-$("#wAdd").onclick=async()=>{const w=+$("#wIn").value,bf=+$("#bfIn").value;if(!w)return;
+function renderProjection(){
+  const P=projection(), last=body[body.length-1];
+  const el=$("#pline"), miles=$("#miles"); $("#paceTxt").textContent="";
+  if(!P){$("#projDate").textContent="—";$("#projDateL").textContent="先在设置里保存目标";$("#projRate").textContent="—";el.innerHTML="";miles.innerHTML="";return}
+  if(P.flat){$("#projDate").textContent="维持";$("#projDateL").textContent="目标体脂率不低于当前值";$("#projRate").textContent="0";el.innerHTML="";miles.innerHTML="";return}
+  $("#projDate").textContent=fmtD(P.end);$("#projDateL").textContent=`预计达到 ${P.r.bfGoalUsed}% · ${P.r.targetW} kg`;
+  $("#projRate").innerHTML=`-${P.perWeek}<small>kg</small>`;
+  // chart
+  const W=320,H=120,now=new Date(),t0=P.startDate.getTime(),span=Math.max(P.weeks*7*DAY,(now-t0)+7*DAY,14*DAY);
+  const pts=body.filter(b=>pd(b.date).getTime()>=t0-DAY);
+  const ws=[P.start.weight,P.r.targetW,...pts.map(b=>b.weight)],mn=Math.min(...ws)-.6,mx=Math.max(...ws)+.6;
+  const X=t=>Math.min(W,(t-t0)/span*W), Y=v=>H-(v-mn)/(mx-mn)*H;
+  const exp=`M${X(t0)} ${Y(P.start.weight)} L${X(P.end.getTime())} ${Y(P.r.targetW)} L${W} ${Y(P.r.targetW)}`;
+  let actPath="",dots="",good=false;
+  if(pts.length){const sameDay=pts.some(b=>pd(b.date).getTime()===t0);const arr=[...(sameDay?[]:[{date:P.start.date,weight:P.start.weight}]),...pts.filter(b=>pd(b.date).getTime()>=t0)];
+    actPath=arr.map((b,i)=>(i?"L":"M")+X(pd(b.date).getTime()).toFixed(1)+" "+Y(b.weight).toFixed(1)).join(" ");
+    const lastP=arr[arr.length-1],expected=P.at((pd(lastP.date).getTime()-t0)/DAY).w,diff=+(lastP.weight-expected).toFixed(1);
+    good=diff<=0;
+    dots=arr.map(b=>`<circle class="${good?"good":""}" cx="${X(pd(b.date).getTime())}" cy="${Y(b.weight)}" r="3.5"/>`).join("");
+    $("#paceTxt").textContent=Math.abs(diff)<0.15?"与计划一致":diff<0?`比计划快 ${Math.abs(diff)} kg`:`比计划慢 ${diff} kg`;
+    $("#paceTxt").style.color=good?"var(--green)":"var(--ink)";}
+  const tx=X(now.getTime());
+  el.innerHTML=`<svg viewBox="-6 -8 ${W+12} ${H+34}">
+    <line class="goal" x1="0" x2="${W}" y1="${Y(P.r.targetW)}" y2="${Y(P.r.targetW)}"/>
+    <line class="today" x1="${tx}" x2="${tx}" y1="0" y2="${H}"/>
+    <path class="exp" d="${exp}"/>${actPath?`<path class="act ${good?"good":""}" d="${actPath}"/>`:""}${dots}
+    <text x="0" y="${H+16}">${fmtD(P.startDate)}</text><text x="${W}" y="${H+16}" text-anchor="end">${fmtD(P.end)}</text>
+    <text class="ink" x="${Math.min(Math.max(tx,20),W-20)}" y="${H+30}" text-anchor="middle">今天</text>
+    <text x="${W}" y="${Y(P.r.targetW)-5}" text-anchor="end">${P.r.targetW} kg</text>
+    <text x="0" y="${Y(P.start.weight)-5}">${P.start.weight} kg</text></svg>`;
+  // milestones: today, +4w, +8w, goal
+  const elapsed=Math.max(0,(now-t0)/DAY);
+  const rows=[{l:"今天",d:elapsed,now:true}];
+  for(const wk of [4,8,12]){if(wk*7<P.weeks*7-3)rows.push({l:`${wk} 周后`,d:elapsed+wk*7})}
+  rows.push({l:`目标 · ${fmtD(P.end)}`,d:P.weeks*7,goal:true});
+  miles.innerHTML=rows.filter((r,i,a)=>r.d<=P.weeks*7||r.goal).map(r=>{const v=P.at(Math.min(r.d,P.weeks*7));
+    return `<li class="${r.goal?"goal":""} ${r.now?"now":""}"><span>${r.l}</span><b>${v.w}<small>kg</small></b><b>${v.bf}<small>%</small></b></li>`}).join("");
+  if(last){$("#projDate").title=`最近记录 ${last.weight} kg`}
+}
+$("#wAdd").onclick=async()=>{const w=+$("#wIn").value,bf=+$("#bfIn").value;if(!w||w<30||w>300){alert("请输入 30–300 kg 之间的体重");return}if(bf&&(bf<3||bf>60)){alert("体脂率请输入 3–60 之间");return}
   body=body.filter(b=>b.date!==todayKey());body.push({date:todayKey(),weight:w,bf:bf||profile.bf});body.sort((a,b)=>a.date<b.date?-1:1);
   profile.weight=w;if(bf)profile.bf=bf;profile.target=computeTarget(profile).target;
   await store.set("higher:body",body);await store.set("higher:profile",profile);$("#wIn").value="";$("#bfIn").value="";renderStats()};
@@ -364,13 +444,22 @@ function fillForm(){$("#apiKey").value=profile.apiKey||"";
   $("#bf").value=profile.bf;$("#bfGoal").value=profile.bfGoal;$("#weeks").value=profile.weeks;$("#act").value=profile.act;
   document.querySelectorAll("[data-sex]").forEach(b=>b.classList.toggle("on",b.dataset.sex===profile.sex))}
 function renderCalc(){const r=computeTarget(profile);$("#calcV").textContent=r.target;
-  let l=`日常消耗约 ${r.tdee} kcal，需减去 ${r.fatToLose} kg 脂肪。蛋白质 ${r.p}g · 碳水 ${r.c}g · 脂肪 ${r.f}g。`;
-  if(r.capped)l+=` 每日缺口已限制在消耗的 25% 以内，按此速度约需 ${r.weeksNeeded} 周。`;if(r.floored)l+=" 已按最低安全摄入设定。";
-  $("#calcL").textContent=l+" 数值为估算，供参考。";return r.target}
+  const L=[];
+  L.push(`瘦体重 ${r.lbm} kg → 基础代谢 ${r.bmr} kcal（Katch-McArdle），日常消耗约 ${r.tdee} kcal。`);
+  if(r.unsafeGoal)L.push(`目标体脂率低于健康下限，已按 ${r.bfGoalUsed}% 计算。`);
+  if(r.goalNotLower)L.push(`目标体脂率不低于当前值，这是维持体重的热量，不会减脂。`);
+  else{L.push(`保持瘦体重不变，目标体重 ${r.targetW} kg，需减去 ${r.fatToLose} kg 脂肪，每日缺口 ${r.tdee-r.target} kcal。`);
+    if(r.capped||r.floored)L.push(`为了健康，缺口已限制在消耗的 25% 以内${r.floored?"且不低于最低摄入":""}，按此速度约需 ${r.weeksNeeded} 周。`);}
+  L.push(`蛋白质 ${r.p}g · 碳水 ${r.c}g · 脂肪 ${r.f}g（蛋白 2.2g/kg 瘦体重，脂肪占 25%）。数值为估算，体脂率本身通常有 ±3% 误差。`);
+  $("#calcL").textContent=L.join(" ");return r.target}
 $("#pSet").addEventListener("input",()=>{readForm();renderCalc()});
 document.querySelectorAll("[data-sex]").forEach(b=>b.onclick=()=>{profile.sex=b.dataset.sex;fillForm();renderCalc()});
 document.querySelectorAll("[data-prov]").forEach(b=>b.onclick=()=>{readForm();profile.provider=b.dataset.prov;fillForm()});
-$("#saveGoal").onclick=async()=>{readForm();profile.target=renderCalc();await store.set("higher:profile",profile);go("pHome")};
+$("#saveGoal").onclick=async()=>{readForm();profile.target=renderCalc();
+  const st=profile.start;
+  if(!st||st.weight!==profile.weight||st.bf!==profile.bf||st.bfGoal!==profile.bfGoal||st.weeks!==profile.weeks||st.act!==profile.act)
+    profile.start={date:todayKey(),weight:profile.weight,bf:profile.bf,bfGoal:profile.bfGoal,weeks:profile.weeks,act:profile.act};
+  await store.set("higher:profile",profile);go("pHome")};
 $("#resetDay").onclick=async()=>{if(!confirm("清空今天的记录？"))return;delete log[todayKey()];await store.set("higher:log",log);go("pHome")};
 
 /* ---------- nav ---------- */
@@ -393,7 +482,7 @@ async function fetchRetry(url,opt){
     if(res.status===401||res.status===403||res.status===400&&(profile.provider||"gemini")==="gemini"){
       let m="";try{m=(await res.json()).error?.message||""}catch(e){}
       if(res.status!==400||/api key|API_KEY|permission/i.test(m))throw new ApiError("nokey","API 密钥无效或已过期");
-      throw new ApiError("server",m||"请求被拒绝")}
+      return {json:async()=>({error:{message:m||"请求被拒绝"}})}}
     if(res.status===429||res.status>=500){if(a<2){await sleep(1200*(a+1));continue}throw new ApiError("busy","识别服务繁忙")}
     return res}
   return res}
@@ -420,14 +509,20 @@ async function askAI(system,text,image){
   if(!profile.apiKey&&!(prov==="claude"&&inArtifact()))throw new ApiError("nokey","还没有填 API 密钥");
   if(prov==="gemini"){
     const parts=[];if(image)parts.push({inline_data:{mime_type:image.type,data:image.data}});parts.push({text});
-    const body=JSON.stringify({system_instruction:{parts:[{text:system}]},contents:[{parts}],generationConfig:{temperature:0.2}});
-    for(let round=0;round<2;round++){
-      const model=await geminiModel(round>0);
+    const mk=fast=>{const g={temperature:0.1,maxOutputTokens:1024};
+      if(image)g.responseMimeType="application/json";
+      if(fast)g.thinkingConfig={thinkingBudget:0};
+      return JSON.stringify({system_instruction:{parts:[{text:system}]},contents:[{parts}],generationConfig:g})};
+    let fast=profile.geminiFast!==false;
+    for(let round=0;round<3;round++){
+      const model=await geminiModel(round>0&&!profile.geminiModel);
       const res=await fetchRetry(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${encodeURIComponent(profile.apiKey)}`,
-        {method:"POST",headers:{"Content-Type":"application/json"},body});
+        {method:"POST",headers:{"Content-Type":"application/json"},body:mk(fast)});
       const j=await res.json();
-      if(j.error){if(round===0&&/not available|not found|no longer|deprecated|not supported/i.test(j.error.message||"")){profile.geminiModel="";continue}
-        throw new ApiError("server",j.error.message||"服务返回错误")}
+      if(j.error){const m=j.error.message||"";
+        if(fast&&/thinking|budget|generationConfig|Unknown name|Invalid JSON payload/i.test(m)){fast=false;profile.geminiFast=false;store.set("higher:profile",profile);continue}
+        if(/not available|not found|no longer|deprecated|not supported/i.test(m)){profile.geminiModel="";continue}
+        throw new ApiError("server",m||"服务返回错误")}
       return (j.candidates?.[0]?.content?.parts||[]).map(p=>p.text||"").join("");
     }
   }
@@ -446,12 +541,24 @@ const FAIL_TEXT={
   server:["识别服务返回错误",""],
   parse:["识别结果异常","请重新拍一张。"],
   image:["照片读取失败","请重新拍照，或换一张 JPG 格式的照片。"]};
-const RECOGNIZE_SYSTEM=["你是专业营养师，精通中餐（家常菜、粤菜、川菜、面点、火锅、烧烤、奶茶等）、西餐（汉堡、披萨、意面、沙拉、牛排、甜点）、日韩、东南亚、快餐和包装食品的营养数据。",
-  "任务：仔细看照片，逐项识别每一种食物或饮品，根据餐具大小、堆叠高度、可见分量估算克数或份量，考虑烹饪方式（油炸、红烧、清蒸等对热量影响很大），给出每项的热量和三大宏量营养素。多种食物要分开列。",
+const RECOGNIZE_SYSTEM=["你是注册营养师，精通中餐（家常菜、粤菜、川菜、面点、火锅、烧烤、奶茶等）、西餐、日韩、东南亚、快餐和包装食品，熟悉《中国食物成分表》和 USDA 食物成分数据库。",
+  "任务：仔细看照片，逐项识别每一种食物或饮品（多种食物分开列，不要合并）。对每一项：",
+  "1) 估算份量克数（g）：以常见餐具为参照——家用饭碗约 250ml、汤碗约 500ml、餐盘直径约 25cm、标准筷子 24cm、易拉罐 330ml；注意堆叠高度与遮挡部分。",
+  "2) 判断烹饪方式（油炸、红烧、清蒸、凉拌等），油炸和重油菜品热量显著更高。",
+  "3) 按成分表给出每 100g 的热量与蛋白质、碳水、脂肪，再乘以克数得到该项总量。",
+  "4) 营养素与热量必须自洽：热量 ≈ 蛋白×4 + 碳水×4 + 脂肪×9 + 酒精×7（误差 <15%）。含酒精饮品必须给出酒精克数（如 500ml 4% 啤酒约 16g 酒精），不含酒精则 alcohol 为 0。",
   "只返回JSON，不要任何其他文字或markdown：",
-  "{\"label\":\"这一餐的名字，不超过8个字\",\"items\":[{\"name\":\"食物名+份量，例如：宫保鸡丁 约200g\",\"kcal\":整数,\"p\":蛋白质克数整数,\"c\":碳水克数整数,\"f\":脂肪克数整数}]}",
+  "{\"label\":\"这一餐的名字，不超过8个字\",\"items\":[{\"name\":\"食物名（不含份量）\",\"grams\":整数,\"kcal\":整数,\"p\":蛋白质克数整数,\"c\":碳水克数整数,\"f\":脂肪克数整数,\"alcohol\":酒精克数整数,\"confidence\":\"high|medium|low\"}]}",
   "如果照片里没有食物，返回{\"label\":\"未识别到食物\",\"items\":[]}。"].join("\n");
-
+/* Atwater consistency check: kcal must agree with macros within 25%, otherwise trust the macros */
+function normalizeItem(i){
+  const g=Math.max(0,Math.round(+i.grams||0)), p=Math.max(0,Math.round(+i.p||0)), c=Math.max(0,Math.round(+i.c||0)), f=Math.max(0,Math.round(+i.f||0));
+  const alc=Math.max(0,Math.round(+i.alcohol||0));
+  let kcal=Math.max(0,Math.round(+i.kcal||0)); const atwater=p*4+c*4+f*9+alc*7; let adjusted=false;
+  if(atwater>0&&Math.abs(kcal-atwater)/atwater>0.25){kcal=Math.round(atwater);adjusted=true}
+  const name=String(i.name||"").replace(/\s*约?\s*\d+\s*g$/i,"").trim()+(g?` 约${g}g`:"");
+  return {name,grams:g,kcal,p,c,f,alcohol:alc,confidence:/high|medium|low/.test(i.confidence)?i.confidence:"medium",adjusted};
+}
 $("#testKey").onclick=async()=>{readForm();const o=$("#testOut");o.textContent="连接中…";o.style.color="";
   try{await askAI("只回复 OK。","OK",null);o.textContent="✓ 识别服务连接正常"+((profile.provider||"gemini")==="gemini"&&profile.geminiModel?"（"+profile.geminiModel+"）":"");o.style.color="var(--green)";
     profile.target=profile.target||computeTarget(profile).target;await store.set("higher:profile",profile)}
@@ -462,20 +569,20 @@ const mealNow=()=>{const h=new Date().getHours()+new Date().getMinutes()/60;retu
 $("#shoot").onclick=()=>$("#file").click();$("#fixRes").onclick=()=>{$("#result").classList.remove("show");$("#file").click()};
 $("#file").onchange=async e=>{
   const f=e.target.files[0];if(!f)return;e.target.value="";
-  const b=$("#shoot");b.disabled=true;b.classList.add("busy");
+  const b=$("#shoot");b.disabled=true;b.classList.add("busy");$("#busyTip").classList.remove("hide");
   let thumb="";
   try{
     const img=await shrink(f).catch(()=>{throw new ApiError("image","照片读取失败")});thumb=img.thumb;
     const txt=await askAI(RECOGNIZE_SYSTEM,"识别并估算这张照片里所有食物的热量和营养。",{type:img.type,data:img.data});
     const parsed=extractJSON(txt);
-    const items=(parsed.items||[]).filter(i=>i&&i.name&&+i.kcal>0).map(i=>({name:String(i.name),kcal:Math.round(+i.kcal),p:Math.round(+i.p||0),c:Math.round(+i.c||0),f:Math.round(+i.f||0)}));
+    const items=(parsed.items||[]).filter(i=>i&&i.name&&(+i.kcal>0||+i.p>0||+i.c>0||+i.f>0)).map(normalizeItem).filter(i=>i.kcal>0);
     if(!items.length){showFail(thumb,"未识别到食物","照片里没有看到可识别的食物。请对准食物、光线充足，重新拍一张。");return}
     pending={meal:mealNow(),items,label:parsed.label||"",img:thumb};showResult();
   }catch(err){
     const k=err.kind||"server";let [t,p]=FAIL_TEXT[k];if(k==="nokey"){t=err.message;if(profile.apiKey)p="请检查设置里的密钥是否完整、是否与所选服务匹配（Gemini / Claude）。"}
     showFail(k==="image"?"":thumb,t,p||("原因："+err.message));
   }
-  finally{b.disabled=false;b.classList.remove("busy")}
+  finally{b.disabled=false;b.classList.remove("busy");$("#busyTip").classList.add("hide")}
 };
 function showFail(img,t,p){$("#thumb").src=img;$("#thumb").style.display=img?"block":"none";
   $("#resTitle").textContent="";$("#resSub").textContent="";$("#failT").textContent=t;$("#failP").textContent=p;
@@ -485,13 +592,15 @@ $("#failClose").onclick=()=>$("#result").classList.remove("show");
 function shrink(file){return new Promise((ok,no)=>{const img=new Image(),url=URL.createObjectURL(file);
   img.onload=()=>{const draw=(max,q)=>{const s=Math.min(1,max/Math.max(img.width,img.height));const c=document.createElement("canvas");
       c.width=img.width*s;c.height=img.height*s;c.getContext("2d").drawImage(img,0,0,c.width,c.height);return c.toDataURL("image/jpeg",q)};
-    const big=draw(1024,.82),thumb=draw(240,.7);URL.revokeObjectURL(url);ok({data:big.split(",")[1],type:"image/jpeg",thumb})};
+    const big=draw(800,.72),thumb=draw(240,.7);URL.revokeObjectURL(url);ok({data:big.split(",")[1],type:"image/jpeg",thumb})};
   img.onerror=()=>no(new Error("图片读取失败"));img.src=url})}
 const sum=(k)=>pending.items.reduce((a,i)=>a+(+i[k]||0),0);
 function showResult(){
   $("#resTitle").textContent=pending.label||"这一餐";$("#resSub").textContent=`${MEALS[pending.meal]} · ${new Date().toLocaleTimeString("zh-CN",{hour:"2-digit",minute:"2-digit"})}`;
   $("#thumb").src=pending.img;$("#thumb").style.display="block";
-  $("#items").innerHTML=pending.items.map(it=>`<li><span>${it.name}</span><b>${Math.round(it.kcal)}</b><em>kcal</em></li>`).join("");
+  $("#items").innerHTML=pending.items.map(it=>`<li><span>${it.name}${it.confidence==="low"?' <em style="color:#b45309;width:auto">· 不确定</em>':""}</span><b>${Math.round(it.kcal)}</b><em>kcal</em></li>`).join("");
+  const low=pending.items.some(i=>i.confidence==="low"), adj=pending.items.some(i=>i.adjusted);
+  $("#resNote").textContent=(low?"部分食物看不清或被遮挡，热量可能有较大偏差。":"")+(adj?"已按蛋白/碳水/脂肪校正热量。":"");
   $("#okBlock").classList.remove("hide");$("#failBlock").classList.add("hide");
   sumRes();$("#result").classList.add("show")}
 function sumRes(){$("#resTot").textContent=sum("kcal");$("#rP").textContent=sum("p")+"g";$("#rC").textContent=sum("c")+"g";$("#rF").textContent=sum("f")+"g"}
