@@ -214,8 +214,9 @@ input[type=file]{display:none}
       <div class="row"><label>计划用时</label><input id="weeks" type="number" inputmode="numeric"/><span class="u">周</span></div>
     </div>
     <div class="card"><h5>拍照识别</h5>
-      <div class="row"><label>API 密钥</label><input class="wide" id="apiKey" type="password" placeholder="sk-ant-…" autocomplete="off"/></div>
-      <div class="hint">在 console.anthropic.com 生成密钥并粘贴到这里，拍照识别就能在手机上使用。密钥只保存在本机。</div>
+      <div class="row"><label>识别服务</label><div class="seg"><button data-prov="gemini">Gemini · 免费</button><button data-prov="claude">Claude</button></div></div>
+      <div class="row"><label>API 密钥</label><input class="wide" id="apiKey" type="password" placeholder="粘贴密钥" autocomplete="off"/></div>
+      <div class="hint" id="provHint"></div>
       <button class="sec" id="testKey" style="border:1.5px solid var(--line);border-radius:14px;margin-top:12px;color:var(--ink)">测试识别连接</button>
       <div class="hint" id="testOut" style="text-align:center;margin-top:8px"></div>
     </div>
@@ -262,7 +263,7 @@ input[type=file]{display:none}
 <script>
 /* ---------- state ---------- */
 const MEALS={breakfast:"早餐",lunch:"中餐",dinner:"晚餐",snack:"加餐"};
-let profile={sex:"m",age:25,height:175,weight:75,bf:22,bfGoal:15,weeks:12,act:1.375,target:0,apiKey:""};
+let profile={sex:"m",age:25,height:175,weight:75,bf:22,bfGoal:15,weeks:12,act:1.375,target:0,apiKey:"",provider:"gemini"};
 let log={};      // {date:[{id,meal,time,label,kcal,p,c,f,items,img}]}
 let body=[];     // [{date,weight,bf}]
 let pending=null, selDate=null;
@@ -355,7 +356,11 @@ $("#wAdd").onclick=async()=>{const w=+$("#wIn").value,bf=+$("#bfIn").value;if(!w
 /* ---------- settings ---------- */
 function readForm(){profile.age=+$("#age").value||25;profile.height=+$("#height").value||175;profile.weight=+$("#weight").value||70;
   profile.bf=+$("#bf").value||20;profile.bfGoal=+$("#bfGoal").value||15;profile.weeks=+$("#weeks").value||12;profile.act=+$("#act").value;profile.apiKey=$("#apiKey").value.trim()}
-function fillForm(){$("#apiKey").value=profile.apiKey||"";$("#age").value=profile.age;$("#height").value=profile.height;$("#weight").value=profile.weight;
+const PROV_HINT={gemini:"免费。打开 aistudio.google.com，用 Google 账号登录 → Get API key → Create API key，复制到这里。不需要绑卡。",
+  claude:"按量付费，约几分钱一张照片。打开 console.anthropic.com → API Keys → Create Key，并在 Billing 里充值少量额度。"};
+function fillForm(){$("#apiKey").value=profile.apiKey||"";
+  document.querySelectorAll("[data-prov]").forEach(b=>b.classList.toggle("on",b.dataset.prov===(profile.provider||"gemini")));
+  $("#provHint").textContent=PROV_HINT[profile.provider||"gemini"]+" 密钥只保存在本机。";$("#age").value=profile.age;$("#height").value=profile.height;$("#weight").value=profile.weight;
   $("#bf").value=profile.bf;$("#bfGoal").value=profile.bfGoal;$("#weeks").value=profile.weeks;$("#act").value=profile.act;
   document.querySelectorAll("[data-sex]").forEach(b=>b.classList.toggle("on",b.dataset.sex===profile.sex))}
 function renderCalc(){const r=computeTarget(profile);$("#calcV").textContent=r.target;
@@ -364,6 +369,7 @@ function renderCalc(){const r=computeTarget(profile);$("#calcV").textContent=r.t
   $("#calcL").textContent=l+" 数值为估算，供参考。";return r.target}
 $("#pSet").addEventListener("input",()=>{readForm();renderCalc()});
 document.querySelectorAll("[data-sex]").forEach(b=>b.onclick=()=>{profile.sex=b.dataset.sex;fillForm();renderCalc()});
+document.querySelectorAll("[data-prov]").forEach(b=>b.onclick=()=>{readForm();profile.provider=b.dataset.prov;fillForm()});
 $("#saveGoal").onclick=async()=>{readForm();profile.target=renderCalc();await store.set("higher:profile",profile);go("pHome")};
 $("#resetDay").onclick=async()=>{if(!confirm("清空今天的记录？"))return;delete log[todayKey()];await store.set("higher:log",log);go("pHome")};
 
@@ -376,29 +382,42 @@ function go(p){document.querySelectorAll(".page").forEach(x=>x.classList.toggle(
 document.querySelectorAll(".tabs button").forEach(b=>b.onclick=()=>go(b.dataset.p));
 $("#openSet").onclick=()=>go("pSet");
 
-/* ---------- Claude API ---------- */
+/* ---------- AI API (Claude / Gemini) ---------- */
 class ApiError extends Error{constructor(kind,msg){super(msg);this.kind=kind}}
 const inArtifact=()=>!!window.storage;
-async function callClaude(body){
+const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+async function fetchRetry(url,opt){
+  let res;
+  for(let a=0;a<3;a++){
+    try{res=await fetch(url,opt)}catch(e){if(a<2){await sleep(800*(a+1));continue}throw new ApiError("network","无法连接识别服务")}
+    if(res.status===401||res.status===403||res.status===400&&(profile.provider||"gemini")==="gemini"){
+      let m="";try{m=(await res.json()).error?.message||""}catch(e){}
+      if(res.status!==400||/api key|API_KEY|permission/i.test(m))throw new ApiError("nokey","API 密钥无效或已过期");
+      throw new ApiError("server",m||"请求被拒绝")}
+    if(res.status===429||res.status>=500){if(a<2){await sleep(1200*(a+1));continue}throw new ApiError("busy","识别服务繁忙")}
+    return res}
+  return res}
+/* returns model text. image = {type,data} or null */
+async function askAI(system,text,image){
+  const prov=profile.provider||"gemini";
+  if(!profile.apiKey&&!(prov==="claude"&&inArtifact()))throw new ApiError("nokey","还没有填 API 密钥");
+  if(prov==="gemini"){
+    const parts=[];if(image)parts.push({inline_data:{mime_type:image.type,data:image.data}});parts.push({text});
+    const res=await fetchRetry("https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key="+encodeURIComponent(profile.apiKey),
+      {method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({system_instruction:{parts:[{text:system}]},contents:[{parts}],generationConfig:{temperature:0.2}})});
+    const j=await res.json();if(j.error)throw new ApiError("server",j.error.message||"服务返回错误");
+    return (j.candidates?.[0]?.content?.parts||[]).map(p=>p.text||"").join("");
+  }
   const headers={"Content-Type":"application/json"};
   if(profile.apiKey){headers["x-api-key"]=profile.apiKey;headers["anthropic-version"]="2023-06-01";headers["anthropic-dangerous-direct-browser-access"]="true"}
-  else if(!inArtifact())throw new ApiError("nokey","还没有填 API 密钥");
-  let res;
-  for(let attempt=0;attempt<3;attempt++){
-    try{res=await fetch("https://api.anthropic.com/v1/messages",{method:"POST",headers,body:JSON.stringify(body)})}
-    catch(e){if(attempt<2){await new Promise(r=>setTimeout(r,800*(attempt+1)));continue}
-      throw new ApiError("network",profile.apiKey?"无法连接识别服务":"还没有填 API 密钥")}
-    if(res.status===401||res.status===403)throw new ApiError("nokey","API 密钥无效或已过期");
-    if(res.status===429||res.status>=500){if(attempt<2){await new Promise(r=>setTimeout(r,1200*(attempt+1)));continue}
-      throw new ApiError("busy","识别服务繁忙")}
-    break}
-  const j=await res.json();
-  if(j.error)throw new ApiError(j.error.type==="authentication_error"?"nokey":"server",j.error.message||"服务返回错误");
+  const content=[];if(image)content.push({type:"image",source:{type:"base64",media_type:image.type,data:image.data}});content.push({type:"text",text});
+  const res=await fetchRetry("https://api.anthropic.com/v1/messages",{method:"POST",headers,body:JSON.stringify({model:"claude-sonnet-4-6",max_tokens:1400,system,messages:[{role:"user",content}]})});
+  const j=await res.json();if(j.error)throw new ApiError(j.error.type==="authentication_error"?"nokey":"server",j.error.message||"服务返回错误");
   return (j.content||[]).filter(c=>c.type==="text").map(c=>c.text).join("");
 }
 function extractJSON(txt){const s=txt.indexOf("{"),e=txt.lastIndexOf("}");if(s<0||e<0)throw new ApiError("parse","识别结果无法解析");return JSON.parse(txt.slice(s,e+1))}
 const FAIL_TEXT={
-  nokey:["还没有填 API 密钥","请到右上角设置里粘贴 API 密钥，保存后再拍。"],
+  nokey:["还没有填 API 密钥","请到右上角设置里选择识别服务并粘贴 API 密钥，保存后再拍。"],
   network:["无法连接识别服务","请确认手机已联网，并在 Safari 中打开本页（不要在预览窗口里使用）。"],
   busy:["识别服务繁忙","请等几秒钟再拍一次。"],
   server:["识别服务返回错误",""],
@@ -411,10 +430,9 @@ const RECOGNIZE_SYSTEM=["你是专业营养师，精通中餐（家常菜、粤�
   "如果照片里没有食物，返回{\"label\":\"未识别到食物\",\"items\":[]}。"].join("\n");
 
 $("#testKey").onclick=async()=>{readForm();const o=$("#testOut");o.textContent="连接中…";o.style.color="";
-  try{const t=await callClaude({model:"claude-sonnet-4-6",max_tokens:20,messages:[{role:"user",content:"回复：OK"}]});
-    o.textContent="✓ 识别服务连接正常"+(t?"":"");o.style.color="var(--green)";
+  try{await askAI("只回复 OK。","OK",null);o.textContent="✓ 识别服务连接正常";o.style.color="var(--green)";
     profile.target=profile.target||computeTarget(profile).target;await store.set("higher:profile",profile)}
-  catch(e){const k=e.kind||"server";o.textContent="✕ "+FAIL_TEXT[k][0]+(e.kind==="server"?"："+e.message:"");o.style.color="#b91c1c"}};
+  catch(e){const k=e.kind||"server";o.textContent="✕ "+(k==="nokey"?e.message:FAIL_TEXT[k][0])+(k==="server"?"："+e.message:"");o.style.color="#b91c1c"}};
 
 /* ---------- photo → calories ---------- */
 const mealNow=()=>{const h=new Date().getHours()+new Date().getMinutes()/60;return h<10.5?"breakfast":h<14.5?"lunch":h<17?"snack":h<21?"dinner":"snack"};
@@ -425,14 +443,13 @@ $("#file").onchange=async e=>{
   let thumb="";
   try{
     const img=await shrink(f).catch(()=>{throw new ApiError("image","照片读取失败")});thumb=img.thumb;
-    const txt=await callClaude({model:"claude-sonnet-4-6",max_tokens:1400,system:RECOGNIZE_SYSTEM,
-      messages:[{role:"user",content:[{type:"image",source:{type:"base64",media_type:img.type,data:img.data}},{type:"text",text:"识别并估算这张照片里所有食物的热量和营养。"}]}]});
+    const txt=await askAI(RECOGNIZE_SYSTEM,"识别并估算这张照片里所有食物的热量和营养。",{type:img.type,data:img.data});
     const parsed=extractJSON(txt);
     const items=(parsed.items||[]).filter(i=>i&&i.name&&+i.kcal>0).map(i=>({name:String(i.name),kcal:Math.round(+i.kcal),p:Math.round(+i.p||0),c:Math.round(+i.c||0),f:Math.round(+i.f||0)}));
     if(!items.length){showFail(thumb,"未识别到食物","照片里没有看到可识别的食物。请对准食物、光线充足，重新拍一张。");return}
     pending={meal:mealNow(),items,label:parsed.label||"",img:thumb};showResult();
   }catch(err){
-    const k=err.kind||"server";let [t,p]=FAIL_TEXT[k];if(k==="nokey"&&profile.apiKey){t=err.message;p="请检查设置里的密钥是否完整，或到 console.anthropic.com 重新生成。"}
+    const k=err.kind||"server";let [t,p]=FAIL_TEXT[k];if(k==="nokey"){t=err.message;if(profile.apiKey)p="请检查设置里的密钥是否完整、是否与所选服务匹配（Gemini / Claude）。"}
     showFail(k==="image"?"":thumb,t,p||("原因："+err.message));
   }
   finally{b.disabled=false;b.classList.remove("busy")}
